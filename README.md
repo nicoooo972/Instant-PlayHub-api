@@ -40,3 +40,7 @@ Lancer l'application
 export FLASK_APP=app.py flask run
 ```
 
+Afin de faire fonctionner flask_socketio, il faut lancer la commande suivante :
+```shell
+pip install Flask Flask-SocketIO
+```
