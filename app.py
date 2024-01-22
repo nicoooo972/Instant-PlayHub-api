@@ -1,22 +1,29 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask import Flask, jsonify
+from flask_cors import CORS
 
+app = Flask(__name__, template_folder='templates')
+CORS(app)
 
-app = Flask(__name__)
-socketio = SocketIO(app)
+sample_data = [
+    {"id": 1, "name": "Doe", "prenom": "John", "mot_de_passe": "secret123", "type": "Action", "version": "1.1"},
+    {"id": 2, "name": "Smith", "prenom": "Jane", "mot_de_passe": "qwerty", "type": "Action", "version": "1.1"},
+]
+#TODO: Récupérer les données depuis la base de données
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def getGames():
+    return ''
+ 
+ 
+@app.route('/admin')
+def admin():
+    data_to_return = [
+        {"id": entry["id"], "name": entry["name"], "prenom": entry["prenom"],"type": entry["type"],"version": entry["version"]} 
+        for entry in sample_data
+    ]
+    return jsonify(data_to_return)
 
-
-@socketio.on('message')
-def handle_message(msg):
-    print('Message', msg)
-    socketio.emit('message', msg)
-
-    
-
+ 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    app.run()
     
