@@ -1,7 +1,7 @@
 # tests/test_game_service.py
 import unittest
 from unittest.mock import Mock, patch
-from application.game_service import GameService
+from app.application.game_service import GameService
 
 class TestGameService(unittest.TestCase):
     @patch('application.game_service.GameRepository')
