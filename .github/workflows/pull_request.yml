@@ -30,6 +30,13 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Temporary Commit
+        if: '!steps.check-pr-exists.outputs.skip'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "Temporary commit for pull request"
+
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v6
