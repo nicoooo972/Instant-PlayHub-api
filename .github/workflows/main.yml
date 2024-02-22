@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
@@ -20,3 +20,13 @@ jobs:
     
     - name: Run Flake8
       run: flake8
+
+    - name: Create Pull Request
+      uses: peter-evans/pull-request-creator@v6
+      if: ${{ !github.event.pull_request }}
+      with:
+        title: 'Automatic PR: Changes for branch ${{ github.ref }}'
+        body: 'This pull request was created automatically for branch ${{ github.ref }}.'
+        branch: main
+        draft: true
+        labels: 'auto-generated'
