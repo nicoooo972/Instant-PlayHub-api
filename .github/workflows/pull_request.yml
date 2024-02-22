@@ -10,12 +10,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get current branch name
+        id: get-branch
+        run: echo "Current branch is ${{ github.ref }}"
+        shell: bash
+
       - name: Check if PR already exists (optional)
         id: check-pr-exists
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          current_branch="${{ github.ref }}"
+          current_branch=$(echo "${{ github.ref }}" | cut -d'/' -f3)
           prs=$(gh pr list -B targetBranch -H sourceBranch)  
           echo Size of PRS ARRAY: ${#prs[@]}
           echo Length of PRS[0] string: ${#prs[0]}
