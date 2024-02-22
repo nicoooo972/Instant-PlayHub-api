@@ -22,7 +22,7 @@ jobs:
       run: flake8
 
     - name: Create Pull Request
-      uses: peter-evans/pull-request-creator@v6
+      uses: peter-evans/create-pull-request@v6
       if: ${{ !github.event.pull_request }}
       with:
         title: 'Automatic PR: Changes for branch ${{ github.ref }}'
