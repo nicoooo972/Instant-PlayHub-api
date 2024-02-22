@@ -14,18 +14,15 @@ jobs:
         id: check-pr-exists
         env:
           GH_TOKEN: ${{ github.token }}
-          run: |
-            prs=$(gh pr list -B targetBranch -H sourceBranch)  
-            # Even when there are no PRs, this array always seems to have 1 result
-            echo Size of PRS ARRAY: ${#prs[@]}
-            # Locally, it seems the gh cli says 'no pull requests match your search..' but not here.
-            # The first element exists but is of length 0
-            echo Length of PRS[0] string: ${#prs[0]}
-            
-            if ((${#prs[@]} > 0 && ${#prs[0]} != 0 )); then
-              echo skipping PR creation
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-            fi
+        run: |
+          prs=$(gh pr list -B targetBranch -H sourceBranch)  
+          echo Size of PRS ARRAY: ${#prs[@]}
+          echo Length of PRS[0] string: ${#prs[0]}
+          
+          if ((${#prs[@]} > 0 && ${#prs[0]} != 0 )); then
+            echo skipping PR creation
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Pull Request
         id: cpr
