@@ -8,7 +8,6 @@ sample_data = [
     {"id": 1, "name": "Doe", "prenom": "John", "mot_de_passe": "secret123", "type": "Action", "version": "1.1"},
     {"id": 2, "name": "Smith", "prenom": "Jane", "mot_de_passe": "qwerty", "type": "Action", "version": "1.1"},
 ]
-#TODO: Récupérer les données depuis la base de données
 
 @app.route('/')
 def getGames():
