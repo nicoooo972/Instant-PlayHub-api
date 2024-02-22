@@ -3,6 +3,7 @@ on:
   push:
     branches: "*"
 
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,8 +40,8 @@ jobs:
           commit-message: "Update report"
           committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          branch: main
-          base: ${{ github.ref_name }}
+          branch: ${{ github.ref_name }}
+          base: main
           title: "[Report] Update report on $(date)"
           body: |
             - Updated report on $(date).
