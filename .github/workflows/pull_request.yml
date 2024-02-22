@@ -1,10 +1,10 @@
-jobs:
+name: createPullRequest
 on:
   push:
     branches: "*"
-  createPullRequest:
     runs-on: ubuntu-latest
 
+jobs:
     steps:
       - uses: actions/checkout@v4
 
