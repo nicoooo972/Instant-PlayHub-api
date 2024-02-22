@@ -15,6 +15,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          current_branch="${{ github.ref }}"
           prs=$(gh pr list -B targetBranch -H sourceBranch)  
           echo Size of PRS ARRAY: ${#prs[@]}
           echo Length of PRS[0] string: ${#prs[0]}
