@@ -15,32 +15,24 @@ Cloner ou télécharger le code source de l'application
 git clone https://github.com/nicoooo972/pfr-api.git 
 ```
 
-Se déplacer dans le répertoire du projet
-```shell
-cd pfr-api
-```
 
-Création de l'environnement virtuel
+Création de l'environnement virtuel en dehors du projet
 ```shell
-virtualenv flask
+python3 -m venv nom_de_votre_env
 ```
 
 Activer l'environnement virtuel
 ```shell
-source flask/bin/activate
+source nom_de_votre_env/bin/activate
 ```
+Rentrer dans le projet
 
 Installer les dépendances dans l'environnement virtuel
 ```shell
-pip3 install flask
+pip3 install -r requirements.txt
 ```
 
 Lancer l'application
 ```shell
 export FLASK_APP=app.py flask run
-```
-
-Afin de faire fonctionner flask_socketio, il faut lancer la commande suivante :
-```shell
-pip install Flask Flask-SocketIO
 ```
