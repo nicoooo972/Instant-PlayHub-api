@@ -13,7 +13,7 @@ jobs:
       - name: Get current branch name
         id: get-branch
         env:
-          GITHUB_BRANCH: ${{ github.ref_name$ }}
+          GITHUB_BRANCH: ${{ github.ref_name }}
         run: echo "Current branch is ${{ github.ref_name }}"
         shell: bash
 
