@@ -22,7 +22,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          current_branch=$(echo "${{ github.ref }}" | cut -d'/' -f3)
+          current_branch=$(cat $GITHUB_OUTPUT | grep "branch=" | cut -d'=' -f2)
           prs=$(gh pr list -B targetBranch -H sourceBranch)  
           echo Size of PRS ARRAY: ${#prs[@]}
           echo Length of PRS[0] string: ${#prs[0]}
@@ -41,7 +41,7 @@ jobs:
           commit-message: "Update report"
           committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          branch: 'current_branch'
+          branch: ${{ steps.get-branch.outputs.branch }}
           title: "[Report] Update report on $(date)"
           body: |
             - Updated report on $(date).
