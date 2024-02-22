@@ -1,8 +1,8 @@
 name: createPullRequest
 on:
   push:
-    branches: "*"
-
+    branches:
+      - main
 
 jobs:
   build:
