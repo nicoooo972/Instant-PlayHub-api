@@ -1,10 +1,13 @@
 # app/infrastructure/user.py
 
+import logging
 from flask import jsonify, request
 import uuid
 import os
 from passlib.hash import pbkdf2_sha256
 from db import db
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, unset_jwt_cookies
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -15,12 +18,18 @@ class User:
     # Création compte utilisateur
     def register(self):
         user_data = request.json
+        
+        # Date de création de l'utilisateur
+        now = datetime.now()
+        # Formatage de la date -> dd/mm/YY H:M:S
+        created_at = now.strftime("%d/%m/%Y %H:%M:%S")
 
         user = {
             "_id": uuid.uuid4().hex,
             "username": user_data.get('username'),
             "email": user_data.get('email'),
             "password": user_data.get('password'),
+            "created_at": created_at
         }
 
         if secret_key is None:
@@ -46,16 +55,21 @@ class User:
         login_data = request.json
         email = login_data.get('email')
         password = login_data.get('password')
-
+        
         user = db.users.find_one({"email": email})
         if user and pbkdf2_sha256.verify(password, user['password']):
-            return jsonify({"message": "Connexion réussie !"}), 200
+            access_token = create_access_token(identity=email)  # Création du token JWT avec l'email de l'utilisateur
+            logging.info(f"Connexion réussie pour l'utilisateur avec l'email {email}.")
+            return jsonify({"message": "Vous êtes connecté ! ", "Token de connexion : ": access_token}), 200  # Retourner le token dans la réponse JSON
         else:
+            logging.error("Tentative de connexion échouée.")
             return jsonify({"error": "Adresse Email ou mot de passe incorrect !"}), 401
     
-    # Déconnexion compte utilisateur
+    # Déconnexion compte utilisateur avec expiration du token JWT
+    @jwt_required()
     def logout(self):
-        return jsonify({"message": "Déconnexion réussie !"}), 200
+        unset_jwt_cookies()  # Expiration du token JWT
+        return jsonify({"message": "Vous êtes déconnecté."}), 200
 
   
 user = User()
