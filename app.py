@@ -1,6 +1,7 @@
 # app.py
 
 import os
+import logging
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from app.application.game_service import game_service
@@ -25,17 +26,18 @@ app.config['JWT_SECRET_KEY'] = os.getenv("SECRET_KEY")
 jwt = JWTManager(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
-# ========== ROUTES ==========
+# ========================= ROUTES =========================
+
+# ---------- Utilisateur ----------
 
 # Page d'accueil
 @app.route('/')
-@auth_middleware.require_authentication
 def home():
     return "Page d'accueil de l'application Flask !"
 
 # Liste des jeux
 @app.route('/api/games')
-#
+@auth_middleware.require_authentication
 def getGames():
     games = game_service.get_all_games()
     return jsonify({'games': games})
@@ -56,10 +58,13 @@ def login():
 @app.route('/logout', methods=['POST'])
 def logout():
     user = User()
-    return user.logout() # la méthode logout() de la classe User sera appelée, ce qui renverra une réponse JSON indiquant que la déconnexion a été réussie.
+    return user.logout()
+
+# ---------- Chat ----------
 
 # Créer un chat
 @app.route('/chat/create', methods=['POST'])
+@auth_middleware.require_authentication
 def create_chat():
     chat_data = request.json
     users = chat_data.get('users', [])
@@ -68,7 +73,8 @@ def create_chat():
     return jsonify({"message": "Chat créé avec succès"}), 200
 
 # Ajouter un utilisateur à un chat
-@app.route('/chat/<chat_id>/add_users', methods=['POST'])
+@app.route('/chat/add_users/<chat_id>', methods=['POST'])
+@auth_middleware.require_authentication
 def add_users_to_chat(chat_id):
     users_data = request.json
     users = users_data.get('users', [])
@@ -77,14 +83,34 @@ def add_users_to_chat(chat_id):
     return jsonify({"message": "Utilisateur ajouté au chat avec succès."}), 200
 
 # Récupérer les messages d'un chat
-@app.route('/chat/<chat_id>/messages', methods=['GET'])
+@app.route('/chat/messages/<chat_id>', methods=['GET'])
+@auth_middleware.require_authentication
 def get_chat_messages(chat_id):
     chat_service = Chat()
     messages = chat_service.get_chat_messages(chat_id)
     return jsonify({"messages": messages}), 200
 
+# Envoyer un message dans un chat
+@app.route('/chat/send_message', methods=['POST'])
+@auth_middleware.require_authentication
+def send_message():
+    message_data = request.json
+    chat_id = message_data.get('chat_id')
+    user_id = message_data.get('user_id')
+    message = message_data.get('message')
+    
+    # Instancier le service Chat
+    chat_service = Chat()
+    
+    # Utilise la méthode pour envoyer le message dans le chat
+    chat_service.send_message(chat_id, {
+        "user_id": user_id,
+        "message": message
+    })
+    
+    return jsonify({"message": "Message envoyé avec succès dans le chat."}), 200
 
-# ========== SOCKETS ==========
+# ========================= SOCKETS =========================
 
 @socketio.on('connect')
 def connect():
@@ -99,7 +125,7 @@ def disconnect():
 def handle_message(data):
     message = data['message']
     username = data['username']
-    print(f'Le cient {request.sid} ({username}) envoie un message : {message}')
+    print(f"L'utilisateur {request.sid} ({username}) a envoyé le message suivant : {message}")
     # Enregistrer le message dans la base de données MongoDB
     chat_service = Chat()
     chat_service.send_message({"Nom d'utilisateur": username, "message": message})
@@ -107,4 +133,12 @@ def handle_message(data):
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
+# Configurer le niveau de logging pour enregistrer uniquement les messages d'erreur et les messages critiques
+app.logger.setLevel(logging.ERROR)
+
+# Ajouter un gestionnaire de console pour afficher les logs d'erreur dans la console
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.ERROR)
+app.logger.addHandler(stream_handler)
     

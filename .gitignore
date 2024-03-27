@@ -2,4 +2,5 @@ PROMPT.md
 venv
 flask
 _pycache_
+.env
 

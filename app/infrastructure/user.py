@@ -7,7 +7,7 @@ import os
 from passlib.hash import pbkdf2_sha256
 from db import db
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, unset_jwt_cookies
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -42,10 +42,10 @@ class User:
 
         user["password"] = pbkdf2_sha256.hash(user['password'], salt=secret_key_bytes)
 
-        if db.users.find_one({"email": user["email"]}):
+        if db.user.find_one({"email": user["email"]}):
             return jsonify({"error": "Cette adresse Email est déjà utilisée par un utilisateur !"}), 400
   
-        if db.users.insert_one(user):
+        if db.user.insert_one(user):
             return jsonify(user), 200
 
         return jsonify({"error": "L'inscription a échouée."}), 400
@@ -56,9 +56,9 @@ class User:
         email = login_data.get('email')
         password = login_data.get('password')
         
-        user = db.users.find_one({"email": email})
+        user = db.user.find_one({"email": email})
         if user and pbkdf2_sha256.verify(password, user['password']):
-            access_token = create_access_token(identity=email)  # Création du token JWT avec l'email de l'utilisateur
+            access_token = create_access_token(identity=email, expires_delta=timedelta(hours=24))  # Création du token JWT avec l'email de l'utilisateur
             logging.info(f"Connexion réussie pour l'utilisateur avec l'email {email}.")
             return jsonify({"message": "Vous êtes connecté ! ", "Token de connexion : ": access_token}), 200  # Retourner le token dans la réponse JSON
         else:

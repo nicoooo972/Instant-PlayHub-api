@@ -5,29 +5,31 @@ from datetime import datetime
 import uuid
 from flask import jsonify, request
 
-
-
+# Modèle d'un chat
 class Chat:
-    def send_message(self, message_data):
-        # Enregistrer le message dans la base de données MongoDB
-        db.messages.insert_one(message_data)
+    def send_message(self, chat_id, message_data):
+        message_id = uuid.uuid4().hex  # Générer un ID unique pour le message
+        message_data["_id"] = message_id  # Ajouter l'ID du message aux données du message
+        
+        # Enregistrer le message dans la collection "message"
+        db.message.insert_one(message_data)
+        
+        # Mettre à jour le champ "Messages" du document du chat correspondant dans la collection "chat"
+        db.chat.update_one({"_id": chat_id}, {"$addToSet": {"Messages": message_id}})
 
     def get_messages(self):
-        # Récupérer l'historique des messages depuis la base de données MongoDB
-        messages = list(db.messages.find())
+        messages = list(db.message.find()) # Récupérer l'historique des messages depuis la base de données MongoDB
         return messages
 
     def create_chat(self, name, users):
-        # Date de création du chat
-        now = datetime.now()
-        # Formatage de la date -> dd/mm/YY H:M:S
-        created_at = now.strftime("%d/%m/%Y %H:%M:%S")
+        now = datetime.now() # Date de création du chat
+        created_at = now.strftime("%d/%m/%Y %H:%M:%S") # Formatage de la date -> dd/mm/YY H:M:S
         
         chat_data = {
             "_id": uuid.uuid4().hex,
             "name": name,
-            "users": users,
-            "messages": [],
+            "Users": users,
+            "Messages": [],
             "created_at": created_at
         }
         db.chat.insert_one(chat_data)
