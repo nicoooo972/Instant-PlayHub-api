@@ -43,7 +43,7 @@ class User:
         user["password"] = pbkdf2_sha256.hash(user['password'], salt=secret_key_bytes)
 
         if db.user.find_one({"email": user["email"]}):
-            return jsonify({"error": "Cette adresse Email est déjà utilisée par un utilisateur !"}), 400
+            return jsonify({"error_email": "Cette adresse Email est déjà utilisée par un utilisateur !"}), 400
   
         if db.user.insert_one(user):
             return jsonify(user), 200
@@ -60,7 +60,7 @@ class User:
         if user and pbkdf2_sha256.verify(password, user['password']):
             access_token = create_access_token(identity=email, expires_delta=timedelta(hours=24))  # Création du token JWT avec l'email de l'utilisateur
             logging.info(f"Connexion réussie pour l'utilisateur avec l'email {email}.")
-            return jsonify({"message": "Vous êtes connecté ! ", "Token de connexion : ": access_token}), 200  # Retourner le token dans la réponse JSON
+            return jsonify({"message": "Vous êtes connecté ! ", "access_token": access_token}), 200  # Retourner le token dans la réponse JSON
         else:
             logging.error("Tentative de connexion échouée.")
             return jsonify({"error": "Adresse Email ou mot de passe incorrect !"}), 401
