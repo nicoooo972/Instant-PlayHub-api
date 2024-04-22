@@ -6,9 +6,9 @@ import uuid
 import os
 from passlib.hash import pbkdf2_sha256
 from db import db
-# from flask_jwt_extended import create_access_token,
-# jwt_required, get_jwt_identity, \
-# unset_jwt_cookies
+from flask_jwt_extended import create_access_token, jwt_required, \
+    get_jwt_identity, \
+    unset_jwt_cookies
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
