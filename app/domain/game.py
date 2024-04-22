@@ -1,5 +1,13 @@
 class Game:
-    def __init__(self, title, genre, platform, release_year, developer, rating):
+    def __init__(
+            self,
+            title,
+            genre,
+            platform,
+            release_year,
+            developer,
+            rating
+    ):
         self.title = title
         self.genre = genre
         self.platform = platform
