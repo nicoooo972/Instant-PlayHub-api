@@ -1,0 +1,62 @@
+<!-- templates/rooms.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Rooms</h1>
+    <input type="text" id="room-name" placeholder="Enter room name">
+    <button id="create-room-button">Create Room</button>
+
+    <div id="rooms-list">
+        <!-- Here you will render the list of rooms -->
+    </div>
+
+    <script>
+        // Connect to the Socket.IO server
+        const socket = io();
+
+        // Add event listener to create room button
+        document.getElementById('create-room-button').addEventListener('click', () => {
+            const roomName = document.getElementById('room-name').value;
+            socket.emit('create_room', { room: roomName });
+        });
+
+        // Listen for room created event
+        socket.on('room_created', (data) => {
+            alert(`Room ${data.room} created`);
+            window.location.href = `/morpion?room=${data.room}`;
+        });
+
+        // Listen for room joined event
+        socket.on('room_joined', (data) => {
+            alert(`Joined room ${data.room}`);
+            window.location.href = `/morpion?room=${data.room}`;
+        });
+
+        // Listen for update in rooms list
+        socket.on('update_rooms', (rooms) => {
+            const roomsList = document.getElementById('rooms-list');
+            roomsList.innerHTML = '';
+            for (const room in rooms) {
+                const roomElement = document.createElement('div');
+                roomElement.innerHTML = `Room ${room}: ${rooms[room].length} players
+                <button onclick="joinRoom('${room}')">Join</button>`;
+                roomsList.appendChild(roomElement);
+            }
+        });
+
+        // Request the list of rooms on page load
+        socket.emit('get_rooms');
+
+        // Function to join a room
+        function joinRoom(roomName) {
+            socket.emit('join_room', { room: roomName });
+        }
+    </script>
+</body>
+</html>
