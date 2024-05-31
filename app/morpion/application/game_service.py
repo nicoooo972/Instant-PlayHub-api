@@ -30,5 +30,7 @@ class GameService:
     def get_game_state(self):
         return {
             'board': self.board.grid,
-            'current_player': self.board.get_current_player()
+            'current_player': self.board.get_current_player(),
+            'winner': self.board.check_winner(),
+            'is_full': self.board.is_full()
         }
