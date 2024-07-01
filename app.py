@@ -40,6 +40,18 @@ def home():
     return "Page d'accueil de l'application Flask !"
 
 
+# Liste des jeux
+@app.route('/api/games')
+@auth_middleware.require_authentication
+def getGames():
+    games = game_service.get_all_games()
+    return jsonify({'games': games})
+
+
+@app.route('/games/uno')
+def getGamesUno():
+    return [];
+
 # Création de compte utilisateur
 @app.route('/register', methods=['POST'])
 def register():
