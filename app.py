@@ -34,11 +34,18 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
 
+
 # ---------- Utilisateur ----------
 
 @app.route('/')
 def home():
     return "Page d'accueil de l'application Flask !"
+
+
+@app.route('/games/uno')
+def getGamesUno():
+    return [];
+
 
 # Création de compte utilisateur
 @app.route('/register', methods=['POST'])
@@ -46,11 +53,13 @@ def register():
     user = User()
     return user.register()
 
+
 # Connexion compte utilisateur
 @app.route('/login', methods=['POST'])
 def login():
     user = User()
     return user.login()
+
 
 # Récupérer les informations de l'utilisateur connecté
 @app.route('/user/info', methods=['GET'])
@@ -59,12 +68,14 @@ def get_user_info():
     user = User()
     return user.get_user_info()
 
+
 # Modifier les informations de l'utilisateur connecté
 @app.route('/user/update', methods=['PUT'])
 @jwt_required()
 def update_user_info():
     user = User()
     return user.update_user_info()
+
 
 # Supprimer son compte
 @app.route('/user/delete', methods=['DELETE'])
@@ -73,11 +84,13 @@ def delete_account():
     user = User()
     return user.delete_account()
 
+
 # Récupérer les informations de tous les utilisateurs
 @app.route('/users', methods=['GET'])
 def get_all_users():
     user = User()
     return user.get_all_users()
+
 
 # Récupérer les informations d'un utilisateur
 @app.route('/user/<userId>', methods=['GET'])
@@ -87,12 +100,14 @@ def get_one_user(userId):
     user = User()
     return user.get_one_user(userId)
 
+
 # Ajouter un autre utilisateur comme ami
 @app.route('/user/<user_id>/add_friend', methods=['POST'])
 @jwt_required()
 def add_friend(user_id):
     user = User()
     return user.add_friend(user_id)
+
 
 # Récupérer la liste d'amis (de l'utilisateur connecté)
 @app.route('/user/friends-list', methods=['GET'])
@@ -101,11 +116,13 @@ def get_friends():
     user = User()
     return user.get_friends()
 
+
 @app.route('/user/chats', methods=['GET'])
 @jwt_required()
 def get_user_chats():
     user = User()
     return user.get_user_chats()
+
 
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
@@ -120,6 +137,7 @@ def logout():
 def morpion():
     return render_template('morpion.html')
 
+
 @app.route('/morpion/rooms')
 def rooms():
     return render_template('rooms.html')
@@ -131,6 +149,7 @@ def rooms():
 def check_or_create_chat(friend_id):
     chat_service = Chat()
     return chat_service.check_or_create_chat(friend_id)
+
 
 # Créer un chat
 @app.route('/chat/create', methods=['POST'])
@@ -150,12 +169,14 @@ def create_chat():
     # On retourne le chat ID
     return jsonify({"chat_id": chat_id}), 200
 
+
 # Récupérer un chat
 @app.route('/chat/<chat_id>', methods=['GET'])
 @jwt_required()
 def get_chat(chat_id):
     chat = Chat()
     return chat.get_one_chat(chat_id)
+
 
 # Ajouter un utilisateur à un chat
 @app.route('/chat/add_users/<chat_id>', methods=['POST'])
@@ -167,12 +188,14 @@ def add_users_to_chat(chat_id):
     chat_service.add_users_to_chat(chat_id, users)
     return jsonify({"message": "Utilisateur ajouté au chat avec succès."}), 200
 
+
 # Récupérer la liste des chats (de l'utilisateur connecté)
 @app.route('/chat/chats-list', methods=['GET'])
 @jwt_required()
 def get_chats():
     chat = Chat()
     return chat.get_chats()
+
 
 # Récupérer les messages d'un chat
 @app.route('/chat/messages/<chat_id>', methods=['GET'])
@@ -181,6 +204,7 @@ def get_chat_messages(chat_id):
     chat_service = Chat()
     messages = chat_service.get_chat_messages(chat_id)
     return jsonify({"messages": messages}), 200
+
 
 # Envoyer un message dans un chat
 @app.route('/chat/send_message', methods=['POST'])
@@ -196,7 +220,9 @@ def send_message():
 
     return jsonify({"message": "Message envoyé avec succès"}), 200
 
-# Supprimer un chat (supprime le chat uniquement pour l'utilisateur qui fait la requête)
+
+# Supprimer un chat (supprime le chat uniquement pour l'utilisateur qui fait
+# la requête)
 @app.route('/chat/delete/<chat_id>', methods=['DELETE'])
 @jwt_required()
 def delete_chat(chat_id):
@@ -210,10 +236,12 @@ def delete_chat(chat_id):
 def connect():
     print(f'Le client {request.sid} est connecté')
 
+
 @socketio.on('disconnect')
 def disconnect():
     emit('disconnect')
     print(f'Le client {request.sid} est déconnecté')
+
 
 @socketio.on('join')
 def on_join(data):
@@ -221,11 +249,13 @@ def on_join(data):
     join_room(chat_id)
     print(f'Le client {request.sid} a rejoint la salle {chat_id}')
 
+
 @socketio.on('leave')
 def on_leave(data):
     chat_id = data['chat_id']
     leave_room(chat_id)
     print(f'Le client {request.sid} a quitté la salle {chat_id}')
+
 
 @socketio.on('message')
 def handle_message(data):
@@ -244,7 +274,8 @@ def handle_message(data):
         "user_id": user_id,
         "message": message
     }, room=chat_id)
-    
+
+
 if __name__ == '__main__':
     app.logger.setLevel(logging.ERROR)
     stream_handler = logging.StreamHandler()
