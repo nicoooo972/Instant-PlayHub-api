@@ -45,6 +45,10 @@ def getGames():
     return jsonify({'games': games})
 
 
+@app.route('/games/uno')
+def getGamesUno():
+    return [];
+
 # Création de compte utilisateur
 @app.route('/register', methods=['POST'])
 def register():
