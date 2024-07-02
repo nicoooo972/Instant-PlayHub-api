@@ -1,0 +1,195 @@
+<!-- templates/morpion.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morpion Game</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        td.disabled {
+            pointer-events: none;
+            background-color: #f0f0f0;
+        }
+
+        #chat {
+            margin-top: 20px;
+            max-width: 400px;
+        }
+
+        #chat ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #chat li {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+<h1>Morpion Game</h1>
+<button id="start-game-button" disabled>Start Game</button>
+
+<div id="game-info">
+    <p id="player-count"></p>
+    <p id="player-symbol"></p>
+    <p id="player-scores">Scores: X - 0, O - 0</p>
+</div>
+
+<div id="game-board">
+    <table id="morpion-table">
+        <tr>
+            <td data-row="0" data-col="0"></td>
+            <td data-row="0" data-col="1"></td>
+            <td data-row="0" data-col="2"></td>
+        </tr>
+        <tr>
+            <td data-row="1" data-col="0"></td>
+            <td data-row="1" data-col="1"></td>
+            <td data-row="1" data-col="2"></td>
+        </tr>
+        <tr>
+            <td data-row="2" data-col="0"></td>
+            <td data-row="2" data-col="1"></td>
+            <td data-row="2" data-col="2"></td>
+        </tr>
+    </table>
+</div>
+
+<div id="chat">
+    <ul id="chat-messages"></ul>
+    <input type="text" id="chat-input" placeholder="Type a message..."/>
+    <button id="chat-send">Send</button>
+</div>
+
+<script>
+    // Connect to the Socket.IO server
+    const socket = io();
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomName = urlParams.get('room');
+    let playerSymbol = '';
+    let gameOver = false;
+
+    // Join the room
+    socket.emit('join_room', {room: roomName});
+
+    // Add event listener to the start game button
+    document.getElementById('start-game-button').addEventListener('click', () => {
+        socket.emit('start_game', {room: roomName});
+    });
+
+    // Listen for game started event
+    socket.on('game_started', (data) => {
+        alert(data.message);
+        // Reset the game board
+        document.querySelectorAll('#morpion-table td').forEach(cell => {
+            cell.textContent = '';
+            cell.classList.remove('disabled');
+        });
+        gameOver = false;
+    });
+
+    // Listen for game state updates
+    socket.on('update_state', (gameState) => {
+        // Update the game board with the new state
+        gameState.board.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+                const cellElement = document.querySelector(`#morpion-table td[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+                cellElement.textContent = cell;
+            });
+        });
+    });
+
+    // Enable start game button when successfully joined a room
+    socket.on('room_joined', (data) => {
+        document.getElementById('start-game-button').disabled = false;
+        document.getElementById('player-count').textContent = `Players in room: ${data.playerCount}`;
+        document.getElementById('player-symbol').textContent = `You are playing as: ${data.symbol}`;
+        playerSymbol = data.symbol;
+    });
+
+    // Listen for update in player count
+    socket.on('update_player_count', (data) => {
+        document.getElementById('player-count').textContent = `Players in room: ${data.playerCount}`;
+    });
+
+    // Listen for score updates
+    socket.on('update_scores', (scores) => {
+        document.getElementById('player-scores').textContent = `Scores: X - ${scores.X}, O - ${scores.O}`;
+    });
+
+    // Handle cell clicks for making moves
+    document.querySelectorAll('#morpion-table td').forEach(cell => {
+        cell.addEventListener('click', () => {
+            if (!gameOver) {
+                const row = cell.getAttribute('data-row');
+                const col = cell.getAttribute('data-col');
+                socket.emit('make_move', {
+                    room: roomName,
+                    row: parseInt(row),
+                    col: parseInt(col),
+                    player: playerSymbol
+                });
+            }
+        });
+    });
+
+    // Listen for game over message
+    socket.on('game_over', (data) => {
+        alert(data.message);
+        gameOver = true;
+        document.querySelectorAll('#morpion-table td').forEach(cell => {
+            cell.classList.add('disabled');
+        });
+    });
+
+    // Handle errors
+    socket.on('error', (error) => {
+        alert(error.message);
+    });
+
+    // Listen for chat messages
+    socket.on('new_message', (message) => {
+        const messageElement = document.createElement('li');
+        messageElement.textContent = message;
+        document.getElementById('chat-messages').appendChild(messageElement);
+    });
+
+    // Send chat message
+    document.getElementById('chat-send').addEventListener('click', () => {
+        const message = document.getElementById('chat-input').value;
+        const username = 'User';  // Remplacer par le nom de l'utilisateur approprié
+        socket.emit('send_message', {room: roomName, message: message, username: username});
+        document.getElementById('chat-input').value = '';
+    });
+
+
+    // Listen for chat history
+    socket.on('chat_history', (history) => {
+        history.forEach(message => {
+            const messageElement = document.createElement('li');
+            messageElement.textContent = message;
+            document.getElementById('chat-messages').appendChild(messageElement);
+        });
+    });
+</script>
+</body>
+</html>
