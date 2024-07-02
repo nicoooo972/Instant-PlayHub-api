@@ -4,7 +4,6 @@ import os
 import logging
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from app.application.game_service import game_service
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
 from flask_jwt_extended import JWTManager
@@ -35,14 +34,6 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 @app.route('/')
 def home():
     return "Page d'accueil de l'application Flask !"
-
-
-# Liste des jeux
-@app.route('/api/games')
-@auth_middleware.require_authentication
-def getGames():
-    games = game_service.get_all_games()
-    return jsonify({'games': games})
 
 
 # Création de compte utilisateur
@@ -139,7 +130,8 @@ def handle_message(data):
     message = data['message']
     username = data['username']
     print(
-        f"L'utilisateur {request.sid} ({username}) a envoyé le message suivant : {message}")
+        f"L'utilisateur {request.sid} ({username}) a envoyé le message "
+        f"suivant : {message}")
     # Enregistrer le message dans la base de données MongoDB
     chat_service = Chat()
     chat_service.send_message(
@@ -151,10 +143,12 @@ def handle_message(data):
 if __name__ == '__main__':
     app.run(debug=True)
 
-# Configurer le niveau de logging pour enregistrer uniquement les messages d'erreur et les messages critiques
+# Configurer le niveau de logging pour enregistrer uniquement les messages
+# d'erreur et les messages critiques
 app.logger.setLevel(logging.ERROR)
 
-# Ajouter un gestionnaire de console pour afficher les logs d'erreur dans la console
+# Ajouter un gestionnaire de console pour afficher les logs d'erreur dans la
+# console
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.ERROR)
 app.logger.addHandler(stream_handler)
