@@ -5,7 +5,6 @@ import logging
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 from gevent import pywsgi
-from app.application.game_service import game_service
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
 from flask_jwt_extended import JWTManager
@@ -60,13 +59,19 @@ def logout():
     return user.logout()
 
 
-# ---------- Chat ----------
-
+# ---------- Morpion ----------
 
 @app.route('/morpion')
 def morpion():
     return render_template('morpion.html')
 
+
+@app.route('/morpion/rooms')
+def rooms():
+    return render_template('rooms.html')
+
+
+# ---------- Chat ----------
 
 # Ajouter un utilisateur à un chat
 @app.route('/chat/add_users/<chat_id>', methods=['POST'])
@@ -78,10 +83,6 @@ def add_users_to_chat(chat_id):
     chat_service.add_users_to_chat(chat_id, users)
     return jsonify({"message": "Utilisateur ajouté au chat avec succès."}), 200
 
-
-@app.route('/rooms')
-def rooms():
-    return render_template('rooms.html')
 
 # Récupérer les messages d'un chat
 @app.route('/chat/messages/<chat_id>', methods=['GET'])
