@@ -77,7 +77,7 @@ class User:
             logging.info(
                 f"Connexion réussie pour l'utilisateur avec l'email {email}.")
             return jsonify({"message": "Vous êtes connecté ! ",
-                            "Token de connexion : ": access_token}), 200  #
+                            "access_token": access_token}), 200  #
             # Retourner le token dans la réponse JSON
         else:
             logging.error("Tentative de connexion échouée.")
