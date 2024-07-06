@@ -33,7 +33,6 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
 
-
 # ---------- Utilisateur ----------
 
 @app.route('/')
