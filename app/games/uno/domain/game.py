@@ -21,8 +21,7 @@ class Game:
     MAX_PLAYERS_ALLOWED = 2
 
     def __init__(self, room: str, players: Set[Player], hand_size: int):
-        self.hands: DefaultDict[Player, List[Card]] = collections.defaultdict(
-            list)
+        self.hands: DefaultDict[Player, List[Card]] = collections.defaultdict(list)
         self.players: Set[Player] = players
         self.notify = Notification(room)
         self.deck = Deck()
@@ -54,8 +53,7 @@ class Game:
 
     def validate_players(self) -> None:
         if len(self.players) < self.MIN_PLAYERS_ALLOWED:
-            raise Exception(
-                f"need at least {self.MIN_PLAYERS_ALLOWED} players to start the game")
+            raise Exception(f"need at least {self.MIN_PLAYERS_ALLOWED} players to start the game")
             return
 
     def get_state(self) -> Tuple[DefaultDict[Player, List[Card]], Card]:
@@ -91,10 +89,7 @@ class Game:
         new_card = self.remaining_cards.pop()
         player_cards.append(new_card)
 
-    def play(
-            self, player_id: str, card_id: str,
-            on_game_over: Callable[[GameOverReason, Any], None]
-            ) -> None:
+    def play(self, player_id: str, card_id: str, on_game_over: Callable[[GameOverReason, Any], None]) -> None:
         self.validate_players()
 
         player = self.find_object(self.players, player_id)

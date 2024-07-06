@@ -6,7 +6,7 @@ from .card import Card
 
 class Deck:
     SHUFFLE_FREQ = 50
-    COLORS = ['red', 'blue', 'green', 'yellow']
+    COLORS = ['rouge', 'blue', 'vert', 'jaune']
     NUMBER_CARDS = [str(i) for i in (list(range(0, 10)) + list(range(1, 10)))]
     DRAW_TWO_CARDS = ['draw-two'] * 2
     REVERSE_CARDS = ['reverse'] * 2
