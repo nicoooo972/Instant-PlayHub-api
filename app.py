@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from app.morpion.infrastructure.socket_manager import setup_morpion_sockets
 from geventwebsocket.handler import WebSocketHandler
 from flask_jwt_extended import jwt_required
+from app.games.uno.infrastructure.socket_manager import setup_uno_sockets
 
 app = Flask(__name__, template_folder='templates')
 app.debug = True
@@ -33,6 +34,10 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
+
+@app.route('/uno')
+def index():
+    return render_template('uno.html')
 
 
 # ---------- Utilisateur ----------
