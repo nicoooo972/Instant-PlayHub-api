@@ -1,4 +1,3 @@
-<!-- templates/morpion.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -88,12 +87,19 @@
     let playerSymbol = '';
     let gameOver = false;
 
+    // Retrieve SID from local storage
+    let sid = localStorage.getItem('sid');
+    if (!sid) {
+        sid = socket.id;
+        localStorage.setItem('sid', sid);
+    }
+
     // Join the room
-    socket.emit('join_room', {room: roomName});
+    socket.emit('join_room', { room: roomName, user_id: sid });
 
     // Add event listener to the start game button
     document.getElementById('start-game-button').addEventListener('click', () => {
-        socket.emit('start_game', {room: roomName});
+        socket.emit('start_game', { room: roomName, user_id: sid });
     });
 
     // Listen for game started event
@@ -146,7 +152,8 @@
                     room: roomName,
                     row: parseInt(row),
                     col: parseInt(col),
-                    player: playerSymbol
+                    player: playerSymbol,
+                    user_id: sid
                 });
             }
         });
@@ -176,11 +183,10 @@
     // Send chat message
     document.getElementById('chat-send').addEventListener('click', () => {
         const message = document.getElementById('chat-input').value;
-        const username = 'User';  // Remplacer par le nom de l'utilisateur approprié
-        socket.emit('send_message', {room: roomName, message: message, username: username});
+        const username = 'User';  // Replace with appropriate user name
+        socket.emit('send_message', { room: roomName, message: message, username: username, user_id: sid });
         document.getElementById('chat-input').value = '';
     });
-
 
     // Listen for chat history
     socket.on('chat_history', (history) => {
