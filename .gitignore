@@ -1,3 +1,5 @@
 venv
 _pycache_
 .env
+PROMPT.md
+.aws
