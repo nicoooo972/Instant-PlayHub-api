@@ -40,6 +40,11 @@ def index():
     return render_template('uno.html')
 
 
+@app.route('/uno')
+def index():
+    return render_template('uno.html')
+
+
 # ---------- Utilisateur ----------
 
 @app.route('/')
@@ -55,6 +60,7 @@ def getGamesUno():
 @app.route('/games/uno')
 def getGamesUno():
     return [];
+
 
 # Création de compte utilisateur
 @app.route('/register', methods=['POST'])

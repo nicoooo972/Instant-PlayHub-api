@@ -89,10 +89,7 @@ class Game:
         new_card = self.remaining_cards.pop()
         player_cards.append(new_card)
 
-    def play(
-            self, player_id: str, card_id: str,
-            on_game_over: Callable[[GameOverReason, Any], None]
-            ) -> None:
+    def play(self, player_id: str, card_id: str, on_game_over: Callable[[GameOverReason, Any], None]) -> None:
         self.validate_players()
 
         player = self.find_object(self.players, player_id)
