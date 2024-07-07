@@ -1,9 +1,9 @@
-# db.py
-
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 class Database:
     def __init__(self, uri, db_name):
