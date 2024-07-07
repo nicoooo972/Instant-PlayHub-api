@@ -80,6 +80,13 @@ def get_all_users():
     user = User()
     return user.get_all_users()
 
+# Récupérer les informations de tous les utilisateurs
+@app.route('/user/<userId>', methods=['GET'])
+def get_one_user(userId):
+    print(userId)
+    user = User()
+    return user.get_one_user(userId)
+
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
 def logout():

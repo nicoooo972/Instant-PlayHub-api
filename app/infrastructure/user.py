@@ -168,9 +168,17 @@ class User:
         return jsonify({"message": "Compte utilisateur supprimé avec succès."}), 200
 
     # Récupérer les informations de tous les utilisateurs
+    @jwt_required()
     def get_all_users(self):
         users = list(db.user.find({}, {"_id": 0, "password": 0}))  # on exclue le champ 'password'
         return jsonify({"users": users}), 200
+    
+    # Récupérer les informations d'un utilisateur
+    @jwt_required()
+    def get_one_user(self, userId):
+        user = db.user.find_one({"_id": userId}, {"password": 0})
+        return jsonify({"User data : ": user}), 200
+
 
     # Déconnexion compte utilisateur avec expiration du token JWT
     @jwt_required()
