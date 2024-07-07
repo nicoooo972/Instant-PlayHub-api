@@ -15,16 +15,8 @@ DATABASE_NAME = 'instantplayhub'
 # Initialisez une instance de la classe Database pour être utilisée ailleurs dans votre application
 db = Database(DATABASE_URI, DATABASE_NAME)
 
-# import pymongo
-# import pymongo
-
-# client = pymongo.MongoClient("localhost", 27017)
-# db = client.instantplayhub
-
-
 from pymongo import MongoClient
 
 client = MongoClient('mongodb+srv://devsduchaos92i:m9STJjh364bs2A@instant-playhub-db.g08uaq6.mongodb.net/?retryWrites=true&w=majority&appName=instant-playhub-db')
 
 db = client['instant-playhub-db']
-collection = db['user']
