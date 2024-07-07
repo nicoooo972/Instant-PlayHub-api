@@ -13,8 +13,10 @@ from app.middlewares.authMiddleware import AuthMiddleware
 from dotenv import load_dotenv
 from app.morpion.infrastructure.socket_manager import setup_morpion_sockets
 from geventwebsocket.handler import WebSocketHandler
+from flask_jwt_extended import jwt_required
 
 app = Flask(__name__, template_folder='templates')
+app.debug = True
 CORS(app)
 
 # Initialisation du middleware
@@ -31,8 +33,8 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
 
+# ---------- Utilisateur ----------
 
-# ---------- Route ----------
 @app.route('/')
 def home():
     return "Page d'accueil de l'application Flask !"
@@ -51,6 +53,32 @@ def login():
     user = User()
     return user.login()
 
+# Récupérer les informations de l'utilisateur connecté
+@app.route('/user/info', methods=['GET'])
+@jwt_required()
+def get_user_info():
+    user = User()
+    return user.get_user_info()
+
+# Modifier les informations de l'utilisateur connecté
+@app.route('/user/update', methods=['PUT'])
+@jwt_required()
+def update_user_info():
+    user = User()
+    return user.update_user_info()
+
+# Supprimer son compte
+@app.route('/user/delete', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user = User()
+    return user.delete_account()
+
+# Récupérer les informations de tous les utilisateurs
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    user = User()
+    return user.get_all_users()
 
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
@@ -148,5 +176,4 @@ if __name__ == '__main__':
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.ERROR)
     app.logger.addHandler(stream_handler)
-
     socketio.run(app, host='0.0.0.0', port=5000)
