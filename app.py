@@ -39,13 +39,11 @@ setup_morpion_sockets(socketio)
 def home():
     return "Page d'accueil de l'application Flask !"
 
-
 # Création de compte utilisateur
 @app.route('/register', methods=['POST'])
 def register():
     user = User()
     return user.register()
-
 
 # Connexion compte utilisateur
 @app.route('/login', methods=['POST'])
@@ -80,12 +78,27 @@ def get_all_users():
     user = User()
     return user.get_all_users()
 
-# Récupérer les informations de tous les utilisateurs
+# Récupérer les informations d'un utilisateur
 @app.route('/user/<userId>', methods=['GET'])
+@jwt_required()
 def get_one_user(userId):
     print(userId)
     user = User()
     return user.get_one_user(userId)
+
+# Ajouter un autre utilisateur comme ami
+@app.route('/user/<user_id>/add_friend', methods=['POST'])
+@jwt_required()
+def add_friend(user_id):
+    user = User()
+    return user.add_friend(user_id)
+
+# Récupérer la liste d'amis (de l'utilisateur connecté)
+@app.route('/user/friends-list', methods=['GET'])
+@jwt_required()
+def get_friends():
+    user = User()
+    return user.get_friends()
 
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
@@ -107,6 +120,26 @@ def rooms():
 
 
 # ---------- Chat ----------
+
+# Créer un chat
+@app.route('/chat/create', methods=['POST'])
+@jwt_required()
+def create_chat():
+    chat_data = request.json
+    # Extraction des données de la requête
+    name = chat_data.get('name')
+    users = chat_data.get('Users')
+
+    if not name or not users:
+        return jsonify({"error": "Nom du chat et liste d'utilisateurs requis."}), 400
+
+    # Créer le chat
+    chat = Chat()
+    chat_id = chat.create_chat(chat_data)
+    print("CHAT_DATA : ", chat_data)
+
+    # On retourne le chat ID
+    return jsonify({"chat_id": chat_id}), 200
 
 # Ajouter un utilisateur à un chat
 @app.route('/chat/add_users/<chat_id>', methods=['POST'])

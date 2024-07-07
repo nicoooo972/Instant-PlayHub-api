@@ -34,3 +34,4 @@ zope.interface==6.4.post2
 boto3
 botocore
 flake8==7.1.0
+shortuuid==1.0.13
