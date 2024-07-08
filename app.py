@@ -100,6 +100,12 @@ def get_friends():
     user = User()
     return user.get_friends()
 
+@app.route('/user/chats', methods=['GET'])
+@jwt_required()
+def get_user_chats():
+    user = User()
+    return user.get_user_chats()
+
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -120,6 +126,11 @@ def rooms():
 
 
 # ---------- Chat ----------
+@app.route('/chat/check_or_create/<friend_id>', methods=['POST'])
+@jwt_required()
+def check_or_create_chat(friend_id):
+    chat_service = Chat()
+    return chat_service.check_or_create_chat(friend_id)
 
 # Créer un chat
 @app.route('/chat/create', methods=['POST'])
@@ -154,7 +165,7 @@ def add_users_to_chat(chat_id):
 
 # Récupérer les messages d'un chat
 @app.route('/chat/messages/<chat_id>', methods=['GET'])
-@auth_middleware.require_authentication
+# @auth_middleware.require_authentication
 def get_chat_messages(chat_id):
     chat_service = Chat()
     messages = chat_service.get_chat_messages(chat_id)
@@ -163,7 +174,7 @@ def get_chat_messages(chat_id):
 
 # Envoyer un message dans un chat
 @app.route('/chat/send_message', methods=['POST'])
-@auth_middleware.require_authentication
+# @auth_middleware.require_authentication
 def send_message():
     message_data = request.json
     chat_id = message_data.get('chat_id')

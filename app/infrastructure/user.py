@@ -171,7 +171,7 @@ class User:
     # Récupérer les informations de tous les utilisateurs
     @jwt_required()
     def get_all_users(self):
-        users = list(db.user.find({}, {"_id": 0, "password": 0}))  # on exclue le champ 'password'
+        users = list(db.user.find({}, {"password": 0}))  # on exclue le champ 'password'
         return jsonify({"users": users}), 200
     
     # Récupérer les informations d'un utilisateur
@@ -237,5 +237,28 @@ class User:
     def logout(self):
         unset_jwt_cookies()  # Expiration du token JWT
         return jsonify({"message": "Vous êtes déconnecté."}), 200
+    
+    @jwt_required()
+    def get_user_chats(self):
+        current_user_email = get_jwt_identity()
+        current_user = db.user.find_one({"email": current_user_email})
+        if not current_user:
+            return jsonify({"error": "Utilisateur non trouvé."}), 404
+
+        user_chats = []
+        for chat_id in current_user.get("Chats", []):
+            chat = db.chat.find_one({"_id": chat_id})
+            if chat:
+                other_user_id = [user_id for user_id in chat["Users"] if user_id != current_user["_id"]]
+                if other_user_id:
+                    other_user = db.user.find_one({"_id": other_user_id[0]}, {"username": 1, "profile_picture": 1})
+                    if other_user:
+                        user_chats.append({
+                            "chat_id": chat["_id"],
+                            "other_user": other_user,
+                            "created_at": chat["created_at"]
+                        })
+
+        return jsonify({"chats": user_chats}), 200
     
 user = User()
