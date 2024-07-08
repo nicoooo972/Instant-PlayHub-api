@@ -10,6 +10,8 @@ class Database:
         self.client = MongoClient(uri)
         self.db = self.client[db_name]
         self.user = self.db['users']
+        self.rooms = self.db['rooms']
+
 
 DATABASE_URI = os.getenv("DATABASE_URI")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
