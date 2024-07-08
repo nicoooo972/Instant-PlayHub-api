@@ -2,12 +2,16 @@
 
 import os
 import logging
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, redirect, url_for
 from flask_cors import CORS
 from gevent import pywsgi
+
+import db
+from app.games.uno.domain.state import State
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, get_jwt_identity, \
+    verify_jwt_in_request
 from flask_socketio import SocketIO, emit
 from app.middlewares.authMiddleware import AuthMiddleware
 from dotenv import load_dotenv
@@ -15,6 +19,7 @@ from app.morpion.infrastructure.socket_manager import setup_morpion_sockets
 from geventwebsocket.handler import WebSocketHandler
 from flask_jwt_extended import jwt_required
 from app.games.uno.infrastructure.socket_manager import setup_uno_sockets
+from app.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
 app.debug = True
@@ -31,32 +36,75 @@ app.config['JWT_SECRET_KEY'] = os.getenv("SECRET_KEY")
 jwt = JWTManager(app)
 socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
+state = State()
+
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
-
-@app.route('/uno')
-def index():
-    return render_template('uno.html')
+setup_uno_sockets(socketio)
 
 
 # ---------- Utilisateur ----------
 
 @app.route('/')
 def home():
-    return "Page d'accueil de l'application Flask !"
+    return render_template('index.html')
 
 
-# Liste des jeux
-@app.route('/api/games')
-@auth_middleware.require_authentication
-def getGames():
-    games = game_service.get_all_games()
-    return jsonify({'games': games})
+@app.route('/create_room', methods=['POST'])
+@jwt_required()
+def create_generic_room():
+    room_name = request.form['room_name']
+    game_type = request.form['game_type']
+    creator_id = request.form['creator_id']
+    room_model.create_room(room_name, game_type, creator_id)
+    return redirect(url_for('get_rooms', game_type=game_type))
 
 
-@app.route('/games/uno')
-def getGamesUno():
-    return [];
+@app.route('/rooms')
+def get_rooms():
+    game_type = request.args.get('game_type')
+    token = request.args.get('token')
+    request.headers = {"Authorization": f"Bearer {token}"}
+    verify_jwt_in_request()
+    rooms = room_model.get_rooms_by_game(game_type)
+    return render_template('rooms.html', rooms=rooms, game_type=game_type)
+
+
+@app.route('/join_room/<room>')
+def join_room(room):
+    room_data = room_model.get_rooms_by_game({"room_name": room})
+    if room_data:
+        game_type = room_data[0]['game_type']
+        return redirect(url_for(game_type, room=room))
+    return redirect(url_for('get_rooms',
+                            game_type='uno'))
+
+
+@app.route('/delete_room', methods=['POST'])
+@jwt_required()
+def delete_room():
+    room_name = request.form['room_name']
+    creator_id = request.form['creator_id']
+    result = room_model.delete_room(room_name, creator_id)
+    if result and result.deleted_count == 1:
+        return jsonify({"message": "Room deleted successfully"}), 200
+    else:
+        return jsonify({"message": "You are not authorized to delete this room"}), 403
+
+
+# ---------- Jeux ----------
+
+
+@app.route('/uno')
+def uno():
+    room_name = request.args.get('room')
+    return render_template('uno.html', room_name=room_name)
+
+
+@app.route('/morpion')
+def morpion():
+    room_name = request.args.get('room')
+    return render_template('morpion.html', room_name=room_name)
 
 
 # Création de compte utilisateur
@@ -72,12 +120,14 @@ def login():
     user = User()
     return user.login()
 
+
 # Récupérer les informations de l'utilisateur connecté
 @app.route('/user/info', methods=['GET'])
 @jwt_required()
 def get_user_info():
     user = User()
     return user.get_user_info()
+
 
 # Modifier les informations de l'utilisateur connecté
 @app.route('/user/update', methods=['PUT'])
@@ -86,6 +136,7 @@ def update_user_info():
     user = User()
     return user.update_user_info()
 
+
 # Supprimer son compte
 @app.route('/user/delete', methods=['DELETE'])
 @jwt_required()
@@ -93,29 +144,19 @@ def delete_account():
     user = User()
     return user.delete_account()
 
+
 # Récupérer les informations de tous les utilisateurs
 @app.route('/users', methods=['GET'])
 def get_all_users():
     user = User()
     return user.get_all_users()
 
+
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
 def logout():
     user = User()
     return user.logout()
-
-
-# ---------- Morpion ----------
-
-@app.route('/morpion')
-def morpion():
-    return render_template('morpion.html')
-
-
-@app.route('/morpion/rooms')
-def rooms():
-    return render_template('rooms.html')
 
 
 # ---------- Chat ----------

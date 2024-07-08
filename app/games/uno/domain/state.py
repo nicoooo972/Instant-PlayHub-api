@@ -1,117 +1,77 @@
 import logging
-import pickle
-from typing import Optional, Set
-from redis import Redis
-from dotenv import load_dotenv
-import os
-
+from typing import Optional, Set, Dict
+from pymongo import MongoClient
 from .game import Game
 from .player import Player
-
-# Charger les variables d'environnement depuis le fichier .env
-load_dotenv()
-
-REDIS_URL = os.getenv('REDIS_URL')
+from db import db
+import pickle
 
 log = logging.getLogger('state')
 log.setLevel(logging.INFO)
 
-GAME_EXPIRATION_TIME = 86_400  # 1 day
-ROOM_EXPIRATION_TIME = 86_400  # 1 day
-
 
 class State:
     def __init__(self):
-        self.redis = Redis.from_url(REDIS_URL)
+        self.rooms_collection = db["room"]
 
-    def allow_player(self, action: str, room: str, player: Player) -> (
-            bool, Optional[str]):
-        # Validate player
+    def allow_player(self, action: str, room: str, player: Player) -> (bool, Optional[str]):
         if not player.name or player.name == '':
             return False, 'name cannot be blank'
-
         if ' ' in player.name:
             return False, 'name should not contain white spaces'
-
-        # Validate room
         if room == '':
             return False, 'room should not be empty'
-
-        if action == "Join":  # Check if room exists
-            exists = bool(self.redis.exists(f'players_{room}'))
-            if not exists:
-                return False, f'cannot join game, room {room} does not exist'
-
-        # Validate game
-        started = bool(self.get_game_by_room(room))
         players = self.get_players_by_room(room)
-
+        if action == "Join":
+            if not players:
+                return False, f'cannot join game, room {room} does not exist'
+        started = self.get_game_by_room(room) is not None
         if len(players) == Game.MAX_PLAYERS_ALLOWED:
-            return (False,
-                    f"room is full, max {Game.MAX_PLAYERS_ALLOWED} players "
-                    f"are supported")
-
+            return False, f"room is full, max {Game.MAX_PLAYERS_ALLOWED} players are supported"
         if started:
             if player not in players:
-                return (False,
-                        f'cannot join, game in the room {room} has already '
-                        f'started')
+                return False, f'cannot join, game in the room {room} has already started'
         else:
             if player in players:
-                return (False,
-                        f"name {player.name} is already taken for this room, "
-                        f"try a different name")
-
+                return False, f"name {player.name} is already taken for this room, try a different name"
         return True, None
 
     def get_game_by_room(self, room: str) -> Optional[Game]:
-        obj = self.redis.get(f'game_{room}')
-        if not obj:
-            return None
-
-        return pickle.loads(obj)
+        room_data = self.rooms_collection.find_one({"room": room})
+        if room_data and "game" in room_data:
+            return pickle.loads(room_data["game"])
+        return None
 
     def add_game_to_room(self, room: str, game: Game) -> None:
-        obj = pickle.dumps(game)
-        self.redis.set(f'game_{room}', obj, ex=GAME_EXPIRATION_TIME)
+        self.rooms_collection.update_one(
+            {"room": room},
+            {"$set": {"game": pickle.dumps(game)}},
+            upsert=True
+        )
 
     def update_game_in_room(self, room: str, game: Game) -> None:
-        obj = pickle.dumps(game)
-        self.redis.set(f'game_{room}', obj, ex=GAME_EXPIRATION_TIME)
+        self.add_game_to_room(room, game)
 
     def get_players_by_room(self, room: str) -> Set[Player]:
-        obj = self.redis.get(f'players_{room}')
-        if not obj:
-            return set()
-
-        return pickle.loads(obj)
+        room_data = self.rooms_collection.find_one({"room": room})
+        if room_data and "players" in room_data:
+            return {Player(player_id) for player_id in room_data["players"]}
+        return set()
 
     def add_player_to_room(self, room: str, player: Player) -> None:
         log.info(f"adding player {player} to room {room}")
-
-        players = self.get_players_by_room(room)
-        players.add(player)
-
-        obj = pickle.dumps(players)
-        self.redis.set(f'players_{room}', obj, ex=ROOM_EXPIRATION_TIME)
+        self.rooms_collection.update_one(
+            {"room": room},
+            {"$addToSet": {"players": player.id}},
+            upsert=True
+        )
 
     def remove_player_from_room(self, room: str, player: Player) -> None:
         log.info(f"removing player {player} from room {room}")
-
-        players = self.get_players_by_room(room)
-        players.remove(player)
-
-        obj = pickle.dumps(players)
-        self.redis.set(f'players_{room}', obj, ex=ROOM_EXPIRATION_TIME)
+        self.rooms_collection.update_one(
+            {"room": room},
+            {"$pull": {"players": player.id}}
+        )
 
     def delete_all(self, room: str) -> None:
-        self.delete_room(room)
-        self.delete_game(room)
-
-    def delete_room(self, room: str) -> None:
-        self.redis.delete(f'players_{room}')
-        log.info(f"deleted {room}")
-
-    def delete_game(self, room: str) -> None:
-        self.redis.delete(f'game_{room}')
-        log.info(f"deleted game for room {room}")
+        self.rooms_collection.delete_one({"room": room})

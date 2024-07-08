@@ -9,3 +9,4 @@ flask-socketio
 flask_jwt_extended
 gevent
 gevent-websocket
+boto3
