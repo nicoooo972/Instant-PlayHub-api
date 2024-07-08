@@ -12,6 +12,57 @@ load_dotenv()
 
 # Class d'un chat
 class Chat:
+        
+    @jwt_required()
+    def check_or_create_chat(self, friend_id):
+        current_user_email = get_jwt_identity()
+        current_user = db.user.find_one({"email": current_user_email})
+
+        if not current_user:
+            return jsonify({"error": "Utilisateur non trouvé."}), 404
+
+        # Rechercher un chat existant entre les deux utilisateurs
+        existing_chat = db.chat.find_one({
+            "Users": {"$all": [current_user["_id"], friend_id]},
+            "isGroup": False
+        })
+
+        if existing_chat:
+            return jsonify({
+                "message": "Chat existant.",
+                "chat_id": existing_chat["_id"]
+            }), 200
+
+        # Si le chat n'existe pas, créer un nouveau chat
+        now = datetime.now()
+        created_at = now.strftime("%d/%m/%Y %H:%M:%S")
+        new_chat = {
+            "_id": uuid.uuid4().hex,
+            "name": "Chat",
+            "Users": [current_user["_id"], friend_id],
+            "Messages": [],
+            "isGroup": False,
+            "created_at": created_at
+        }
+
+        if db.chat.insert_one(new_chat):
+            new_chat_id = new_chat["_id"]
+            # Mettre à jour l'utilisateur actuel avec le nouvel ID de chat
+            db.user.update_one(
+                {"_id": current_user["_id"]},
+                {"$push": {"Chats": new_chat_id}}
+            )
+            # Mettre à jour l'ami avec le nouvel ID de chat
+            db.user.update_one(
+                {"_id": friend_id},
+                {"$push": {"Chats": new_chat_id}}
+            )
+            return jsonify({
+                "message": "Nouveau chat créé.",
+                "chat_id": new_chat_id
+            }), 201
+
+        return jsonify({"error": "Échec de la création du chat."}), 500
 
     # Créer un chat
     def create_chat(self, chat_data):
