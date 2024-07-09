@@ -8,6 +8,7 @@ from flask_jwt_extended import create_access_token, jwt_required, \
     get_jwt_identity, \
     unset_jwt_cookies
 from dotenv import load_dotenv
+from app.infrastructure.message import Message
 load_dotenv()
 
 # Class d'un chat
@@ -115,19 +116,9 @@ class Chat:
             return jsonify({"error": "Accès non autorisé à ce chat."}), 403
     
     # Envoyer un message
-    def send_message(self, chat_id, message_data):
-        message_id = uuid.uuid4().hex  # Générer un ID unique pour le message
-        message_data[
-            "_id"] = message_id  # Ajouter l'ID du message aux données du
-        # message
-
-        # Enregistrer le message dans la collection "message"
-        db.message.insert_one(message_data)
-
-        # Mettre à jour le champ "Messages" du document du chat
-        # correspondant dans la collection "chat"
-        db.chat.update_one({"_id": chat_id},
-                           {"$addToSet": {"Messages": message_id}})
+    def send_message(self, chat_id, user_id, message):
+        new_message = Message(chat_id, user_id, message)
+        new_message.save_to_db()
 
     # Récupérer les chats (de l'utilisateur connecté)
     @jwt_required()
@@ -164,11 +155,8 @@ class Chat:
 
     # Méthode pour récupérer les messages d'un chat spécifique
     def get_chat_messages(self, chat_id):
-        chat = db.chat.find_one({"_id": chat_id})
-        if chat:
-            return chat["messages"]
-        else:
-            return []
+        messages = Message.get_messages_by_chat_id(chat_id)
+        return messages
 
     # Supprimer un chat (le chat est supprimé pour tous les utilisateurs)
     @jwt_required()

@@ -7,6 +7,7 @@ from flask_cors import CORS
 from gevent import pywsgi
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
+from app.infrastructure.chat import Message
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from app.middlewares.authMiddleware import AuthMiddleware
@@ -175,7 +176,7 @@ def get_chats():
 
 # Récupérer les messages d'un chat
 @app.route('/chat/messages/<chat_id>', methods=['GET'])
-# @auth_middleware.require_authentication
+@jwt_required()
 def get_chat_messages(chat_id):
     chat_service = Chat()
     messages = chat_service.get_chat_messages(chat_id)
@@ -183,24 +184,17 @@ def get_chat_messages(chat_id):
 
 # Envoyer un message dans un chat
 @app.route('/chat/send_message', methods=['POST'])
-# @auth_middleware.require_authentication
+@jwt_required()
 def send_message():
-    message_data = request.json
-    chat_id = message_data.get('chat_id')
-    user_id = message_data.get('user_id')
-    message = message_data.get('message')
+    data = request.json
+    chat_id = data.get('chat_id')
+    user_id = data.get('user_id')
+    message = data.get('message')
 
-    # Instancier le service Chat
     chat_service = Chat()
+    chat_service.send_message(chat_id, user_id, message)
 
-    # Utilise la méthode pour envoyer le message dans le chat
-    chat_service.send_message(chat_id, {
-        "user_id": user_id,
-        "message": message
-    })
-
-    return jsonify(
-        {"message": "Message envoyé avec succès dans le chat."}), 200
+    return jsonify({"message": "Message envoyé avec succès"}), 200
 
 # Supprimer un chat (supprime le chat uniquement pour l'utilisateur qui fait la requête)
 @app.route('/chat/delete/<chat_id>', methods=['DELETE'])
