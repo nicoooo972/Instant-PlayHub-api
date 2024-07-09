@@ -7,6 +7,7 @@ from flask_cors import CORS
 from gevent import pywsgi
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
+from app.infrastructure.message import Message
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from app.middlewares.authMiddleware import AuthMiddleware
@@ -106,6 +107,19 @@ def get_user_chats():
     user = User()
     return user.get_user_chats()
 
+# Supprimer un ami
+@app.route('/friend/remove', methods=['POST'])
+@jwt_required()
+def remove_friend():
+    data = request.json
+    friend_id = data.get('friend_id')
+
+    if not friend_id:
+        return jsonify({"error": "friend_id est requis."}), 400
+
+    chat_service = Chat()
+    return chat_service.remove_friend(friend_id)
+
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -125,6 +139,7 @@ def rooms():
 
 
 # ---------- Chat ----------
+
 @app.route('/chat/check_or_create/<friend_id>', methods=['POST'])
 @jwt_required()
 def check_or_create_chat(friend_id):
@@ -158,7 +173,7 @@ def get_chat(chat_id):
 
 # Ajouter un utilisateur à un chat
 @app.route('/chat/add_users/<chat_id>', methods=['POST'])
-@auth_middleware.require_authentication
+@jwt_required()
 def add_users_to_chat(chat_id):
     users_data = request.json
     users = users_data.get('users', [])
@@ -175,7 +190,7 @@ def get_chats():
 
 # Récupérer les messages d'un chat
 @app.route('/chat/messages/<chat_id>', methods=['GET'])
-# @auth_middleware.require_authentication
+@jwt_required()
 def get_chat_messages(chat_id):
     chat_service = Chat()
     messages = chat_service.get_chat_messages(chat_id)
@@ -183,24 +198,53 @@ def get_chat_messages(chat_id):
 
 # Envoyer un message dans un chat
 @app.route('/chat/send_message', methods=['POST'])
-# @auth_middleware.require_authentication
+@jwt_required()
 def send_message():
     message_data = request.json
-    chat_id = message_data.get('chat_id')
-    user_id = message_data.get('user_id')
-    message = message_data.get('message')
+    chat_id = message_data.get('Chat')
+    content = message_data.get('content')
 
-    # Instancier le service Chat
-    chat_service = Chat()
+    if not chat_id or not content:
+        return jsonify({"error": "chat_id et content sont requis."}), 400
+
+    # Instancier le service Message
+    message_service = Message()
 
     # Utilise la méthode pour envoyer le message dans le chat
-    chat_service.send_message(chat_id, {
-        "user_id": user_id,
-        "message": message
-    })
+    return message_service.send_message(chat_id, content)
 
-    return jsonify(
-        {"message": "Message envoyé avec succès dans le chat."}), 200
+# Modifier un message dans un chat
+@app.route('/chat/edit_message', methods=['PUT'])
+@jwt_required()
+def edit_message():
+    message_data = request.json
+    message_id = message_data.get('message_id')
+    new_content = message_data.get('content')
+
+    if not message_id or not new_content:
+        return jsonify({"error": "message_id et content sont requis."}), 400
+
+    # Instancier le service Message
+    message_service = Message()
+
+    # Utilise la méthode pour modifier le message
+    return message_service.edit_message(message_id, new_content)
+
+# Supprimer un message dans un chat
+@app.route('/chat/delete_message', methods=['DELETE'])
+@jwt_required()
+def delete_message():
+    message_data = request.json
+    message_id = message_data.get('message_id')
+
+    if not message_id:
+        return jsonify({"error": "message_id est requis."}), 400
+
+    # Instancier le service Message
+    message_service = Message()
+
+    # Utilise la méthode pour supprimer le message
+    return message_service.delete_message(message_id)
 
 # Supprimer un chat (supprime le chat uniquement pour l'utilisateur qui fait la requête)
 @app.route('/chat/delete/<chat_id>', methods=['DELETE'])
@@ -236,21 +280,23 @@ def on_leave(data):
 @socketio.on('message')
 def handle_message(data):
     chat_id = data['chat_id']
-    user_id = data['user_id']
-    message = data['message']
+    content = data['content']
 
-    chat_service = Chat()
-    chat_service.send_message(chat_id, {
-        "user_id": user_id,
-        "message": message
-    })
+    if not chat_id or not content:
+        emit('error', {"error": "chat_id et content sont requis."})
+        return
 
-    socketio.emit('message', {
-        "chat_id": chat_id,
-        "user_id": user_id,
-        "message": message
-    }, room=chat_id)
-    
+    message_service = Message()
+    response, status = message_service.send_message(chat_id, content)
+
+    if status == 200:
+        socketio.emit('message', {
+            "chat_id": chat_id,
+            "content": content
+        }, room=chat_id)
+    else:
+        emit('error', response.get_json())
+  
 if __name__ == '__main__':
     app.logger.setLevel(logging.ERROR)
     stream_handler = logging.StreamHandler()

@@ -10,9 +10,10 @@ from flask_jwt_extended import create_access_token, jwt_required, \
 from dotenv import load_dotenv
 load_dotenv()
 
-# Class d'un chat
+# Modèle d'un chat
 class Chat:
-        
+    
+    # Vérifie si on chat existe déjà entre les utilisateurs (sinon création de chat)
     @jwt_required()
     def check_or_create_chat(self, friend_id):
         current_user_email = get_jwt_identity()
@@ -114,21 +115,14 @@ class Chat:
         else:
             return jsonify({"error": "Accès non autorisé à ce chat."}), 403
     
-    # Envoyer un message
-    def send_message(self, chat_id, message_data):
-        message_id = uuid.uuid4().hex  # Générer un ID unique pour le message
-        message_data[
-            "_id"] = message_id  # Ajouter l'ID du message aux données du
-        # message
-
-        # Enregistrer le message dans la collection "message"
-        db.message.insert_one(message_data)
-
-        # Mettre à jour le champ "Messages" du document du chat
-        # correspondant dans la collection "chat"
-        db.chat.update_one({"_id": chat_id},
-                           {"$addToSet": {"Messages": message_id}})
-
+    # Récupérer les messages d'un chat spécifique
+    def get_chat_messages(self, chat_id):
+        chat = db.chat.find_one({"_id": chat_id})
+        if chat:
+            return chat["messages"]
+        else:
+            return []
+    
     # Récupérer les chats (de l'utilisateur connecté)
     @jwt_required()
     def get_chats(self):
@@ -149,26 +143,10 @@ class Chat:
 
         return jsonify({"Chats": chats}), 200
 
-    # Récupérer les messages d'un chat
-    def get_messages(self):
-        messages = list(
-            db.message.find())  # Récupérer l'historique des messages depuis
-        # la base de
-        # données MongoDB
-        return messages
-
-    # Méthode pour ajouter des utilisateurs à un chat existant
+    # Ajouter des utilisateurs à un chat existant
     def add_users_to_chat(self, chat_id, users):
         db.chat.update_one({"_id": chat_id},
                            {"$addToSet": {"users": {"$each": users}}})
-
-    # Méthode pour récupérer les messages d'un chat spécifique
-    def get_chat_messages(self, chat_id):
-        chat = db.chat.find_one({"_id": chat_id})
-        if chat:
-            return chat["messages"]
-        else:
-            return []
 
     # Supprimer un chat (le chat est supprimé pour tous les utilisateurs)
     @jwt_required()
@@ -194,3 +172,5 @@ class Chat:
         db.chat.delete_one({"_id": chat_id})
 
         return jsonify({"message": "Chat supprimé avec succès."}), 200
+
+chat = Chat()

@@ -18,12 +18,17 @@ load_dotenv()
 
 secret_key = os.getenv("SECRET_KEY")
 
-
 # Modèle d'utilisateur
 class User:
+    
     # Création compte utilisateur
     def register(self):
         user_data = request.json
+        
+        # Vérification de la longueur du pseudo lors de l'inscription
+        username = user_data.get("username", "")
+        if len(username) > 20:
+            return jsonify({"error": "Le pseudo ne peut pas dépasser 20 caractères."}), 400
 
         # Date de création de l'utilisateur
         now = datetime.now()
@@ -231,6 +236,41 @@ class User:
                 friends.append(friend)
 
         return jsonify({"Friends": friends}), 200
+
+    # Méthode pour supprimer un ami
+    @jwt_required()
+    def remove_friend(self, friend_id):
+        current_user_email = get_jwt_identity()
+        current_user = db.user.find_one({"email": current_user_email})
+
+        if not current_user:
+            return jsonify({"error": "Utilisateur non trouvé."}), 404
+
+        # Supprimer l'ami de la liste des amis de l'utilisateur connecté
+        db.user.update_one({"_id": current_user["_id"]}, {"$pull": {"Friends": friend_id}})
+        
+        # Supprimer l'utilisateur connecté de la liste des amis de l'autre utilisateur
+        db.user.update_one({"_id": friend_id}, {"$pull": {"Friends": current_user["_id"]}})
+
+        # Trouver le chat entre les deux utilisateurs
+        chat = db.chat.find_one({
+            "Users": {"$all": [current_user["_id"], friend_id]},
+            "isGroup": False
+        })
+
+        if chat:
+            chat_id = chat["_id"]
+            # Supprimer le chat de la liste des chats de chaque utilisateur
+            db.user.update_one({"_id": current_user["_id"]}, {"$pull": {"Chats": chat_id}})
+            db.user.update_one({"_id": friend_id}, {"$pull": {"Chats": chat_id}})
+
+            # Supprimer les messages associés à ce chat
+            db.message.delete_many({"Chat": chat_id})
+
+            # Supprimer le chat
+            db.chat.delete_one({"_id": chat_id})
+
+        return jsonify({"message": "Ami supprimé avec succès."}), 200
 
     # Déconnexion compte utilisateur avec expiration du token JWT
     @jwt_required()
