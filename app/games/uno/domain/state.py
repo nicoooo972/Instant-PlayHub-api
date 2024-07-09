@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Set, Dict
+from typing import Optional, Set
 from pymongo import MongoClient
 from .game import Game
 from .player import Player
@@ -12,9 +12,11 @@ log.setLevel(logging.INFO)
 
 class State:
     def __init__(self):
-        self.rooms_collection = db["room"]
+        self.rooms_collection = db.rooms  # Correctly access the rooms
+        # collection
 
-    def allow_player(self, action: str, room: str, player: Player) -> (bool, Optional[str]):
+    def allow_player(self, action: str, room: str, player: Player) -> (
+    bool, Optional[str]):
         if not player.name or player.name == '':
             return False, 'name cannot be blank'
         if ' ' in player.name:
