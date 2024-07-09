@@ -64,14 +64,22 @@ def create_generic_room():
     return redirect(url_for('get_rooms', game_type=game_type))
 
 
-@app.route('/rooms')
+@app.route('/rooms', methods=['GET'])
+@jwt_required()
 def get_rooms():
-    game_type = request.args.get('game_type')
-    token = request.args.get('token')
-    request.headers = {"Authorization": f"Bearer {token}"}
-    verify_jwt_in_request()
-    rooms = room_model.get_rooms_by_game(game_type)
-    return render_template('rooms.html', rooms=rooms, game_type=game_type)
+    game_type = request.args.get('gameType')
+    print(game_type)
+    print("salut")
+    rooms = db.rooms.find({"game_type": game_type})  # Correctly access the rooms collection
+    room_list = []
+    for room in rooms:
+        room_data = {
+            "room_name": room["room_name"],
+            "game_type": room["game_type"],
+            "creator_id": room["creator_id"]
+        }
+        room_list.append(room_data)
+    return jsonify({"rooms": room_list, "game_type": game_type})
 
 
 @app.route('/join_room/<room>')
