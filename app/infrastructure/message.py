@@ -26,5 +26,5 @@ class Message:
     @staticmethod
     def get_messages_by_chat_id(chat_id):
         messages_ids = db.chat.find_one({"_id": chat_id}).get("Messages", [])
-        messages = list(db.message.find({"_id": {"$in": messages_ids}}))
+        messages = list(db.message.find({"_id": {"$in": messages_ids}}).sort("timestamp", 1))  # Sort by timestamp descending
         return messages
