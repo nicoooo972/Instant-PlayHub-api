@@ -26,7 +26,7 @@ from app.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
 app.debug = True
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Initialisation du middleware
 auth_middleware = AuthMiddleware(app)
@@ -57,9 +57,9 @@ def home():
 @app.route('/create_room', methods=['POST'])
 @jwt_required()
 def create_generic_room():
-    room_name = request.form['room_name']
-    game_type = request.form['game_type']
-    creator_id = request.form['creator_id']
+    room_name = request.json.get('room_name')
+    game_type = request.json.get('game_type')
+    creator_id = request.json.get('creator_id')
     room_model.create_room(room_name, game_type, creator_id)
     return redirect(url_for('get_rooms', game_type=game_type))
 
@@ -67,20 +67,9 @@ def create_generic_room():
 @app.route('/rooms', methods=['GET'])
 @jwt_required()
 def get_rooms():
-    game_type = request.args.get('gameType')
-    print(game_type)
-    print("salut")
-    rooms = db.rooms.find({"game_type": game_type})  # Correctly access the rooms collection
-    room_list = []
-    for room in rooms:
-        room_data = {
-            "room_name": room["room_name"],
-            "game_type": room["game_type"],
-            "creator_id": room["creator_id"]
-        }
-        room_list.append(room_data)
-    return jsonify({"rooms": room_list, "game_type": game_type})
-
+    game_type = request.args.get('game_type')
+    rooms = room_model.get_rooms_by_game(game_type)
+    return jsonify({"rooms": rooms, "game_type": game_type}), 200
 
 @app.route('/join_room/<room>')
 def join_room(room):
@@ -95,10 +84,12 @@ def join_room(room):
 @app.route('/delete_room', methods=['POST'])
 @jwt_required()
 def delete_room():
-    room_name = request.form['room_name']
-    creator_id = request.form['creator_id']
+    room_name = request.json.get('room_name')
+    creator_id = request.json.get('creator_id')
     result = room_model.delete_room(room_name, creator_id)
+    print(result.deleted_count)
     if result and result.deleted_count == 1:
+        print("here")
         return jsonify({"message": "Room deleted successfully"}), 200
     else:
         return jsonify({"message": "You are not authorized to delete this room"}), 403
@@ -295,7 +286,7 @@ def delete_chat(chat_id):
 
 @socketio.on('connect')
 def connect():
-    print(f'Le client {request.sid} est connecté')
+    print(f'Le client est connecté')
 
 
 @socketio.on('disconnect')
