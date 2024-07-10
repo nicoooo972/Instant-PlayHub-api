@@ -10,6 +10,8 @@ import db
 from app.games.uno.domain.state import State
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
+from flask_jwt_extended import JWTManager, get_jwt_identity, \
+    verify_jwt_in_request
 from app.infrastructure.chat import Message
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -44,7 +46,6 @@ state = State()
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
 setup_uno_sockets(socketio)
-
 
 
 # ---------- Utilisateur ----------
@@ -152,6 +153,7 @@ def delete_account():
 def get_all_users():
     user = User()
     return user.get_all_users()
+
 
 
 # Récupérer les informations d'un utilisateur

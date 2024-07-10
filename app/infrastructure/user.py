@@ -117,13 +117,13 @@ class User:
                     update_data["password"], salt=secret_key_bytes)
             except Exception as e:
                 return jsonify({
-                                   "error": "Erreur lors de l'encodage de la clé secrète en bytes.",
-                                   "details": str(e)}), 500
+                    "error": "Erreur lors de l'encodage de la clé secrète en bytes.",
+                    "details": str(e)}), 500
 
         if "username" in update_data:
             if db.user.find_one({"username": update_data["username"]}):
                 return jsonify({
-                                   "error": "Ce pseudo est déjà utilisé par un autre utilisateur !"}), 400
+                    "error": "Ce pseudo est déjà utilisé par un autre utilisateur !"}), 400
 
         if "profile_picture" in update_data:
             # Extraire les données base64 du champ profile_picture
@@ -155,8 +155,8 @@ class User:
                               Body=profile_picture_bytes, ACL='public-read')
             except Exception as e:
                 return jsonify({
-                                   "error": "Erreur lors du téléversement de la photo de profil.",
-                                   "details": str(e)}), 500
+                    "error": "Erreur lors du téléversement de la photo de profil.",
+                    "details": str(e)}), 500
 
             # Mettre à jour le champ profile_picture avec l'URL de l'image sur S3
             update_data[
@@ -165,7 +165,7 @@ class User:
         db.user.update_one({"email": current_user_email},
                            {"$set": update_data})
         return jsonify({
-                           "message": "Informations de l'utilisateur mises à jour avec succès."}), 200
+            "message": "Informations de l'utilisateur mises à jour avec succès."}), 200
 
     # Supprimer le compte de l'utilisateur connecté
     @jwt_required()
@@ -183,7 +183,8 @@ class User:
     # Récupérer les informations de tous les utilisateurs
     @jwt_required()
     def get_all_users(self):
-        users = list(db.user.find({}, {"password": 0}))  # on exclue le champ 'password'
+        users = list(db.user.find({}, {"_id": 0,
+                                       "password": 0}))  # on exclue le champ 'password'
         return jsonify({"users": users}), 200
 
     # Récupérer les informations d'un utilisateur
@@ -208,21 +209,26 @@ class User:
 
         # Ne pas s'ajouter en tant qu'ami
         if current_user["_id"] == friend_id:
-            return jsonify({"error": "Vous ne pouvez pas vous ajouter vous-même en ami."}), 400
+            return jsonify({
+                               "error": "Vous ne pouvez pas vous ajouter vous-même en ami."}), 400
 
         # Vérifier si l'utilisateur qu'on ajoute existe déjà dans la liste
         if friend_id in current_user.get("Friends", []):
-            return jsonify({"error": "Cet utilisateur est déjà votre ami."}), 400
+            return jsonify(
+                {"error": "Cet utilisateur est déjà votre ami."}), 400
 
         # MAJ la liste d'ami (si pas déjà présent)
         current_user["Friends"] = current_user.get("Friends", []) + [friend_id]
-        db.user.update_one({"email": current_user_email}, {"$set": {"Friends": current_user["Friends"]}})
+        db.user.update_one({"email": current_user_email},
+                           {"$set": {"Friends": current_user["Friends"]}})
 
         # MAJ la liste d'ami de l'ami qu'on ajoute
         friend["Friends"] = friend.get("Friends", []) + [current_user["_id"]]
-        db.user.update_one({"_id": friend_id}, {"$set": {"Friends": friend["Friends"]}})
+        db.user.update_one({"_id": friend_id},
+                           {"$set": {"Friends": friend["Friends"]}})
 
-        return jsonify({"message": "L'utilisateur a été ajouté à votre liste d'amis."}), 200
+        return jsonify({
+                           "message": "L'utilisateur a été ajouté à votre liste d'amis."}), 200
 
     # Récupérer la liste d'amis (de l'utilisateur connecté)
     @jwt_required()
@@ -261,9 +267,12 @@ class User:
         for chat_id in current_user.get("Chats", []):
             chat = db.chat.find_one({"_id": chat_id})
             if chat:
-                other_user_id = [user_id for user_id in chat["Users"] if user_id != current_user["_id"]]
+                other_user_id = [user_id for user_id in chat["Users"] if
+                                 user_id != current_user["_id"]]
                 if other_user_id:
-                    other_user = db.user.find_one({"_id": other_user_id[0]}, {"username": 1, "profile_picture": 1})
+                    other_user = db.user.find_one({"_id": other_user_id[0]},
+                                                  {"username": 1,
+                                                   "profile_picture": 1})
                     if other_user:
                         user_chats.append({
                             "chat_id": chat["_id"],
@@ -272,5 +281,6 @@ class User:
                         })
 
         return jsonify({"chats": user_chats}), 200
+
 
 user = User()
