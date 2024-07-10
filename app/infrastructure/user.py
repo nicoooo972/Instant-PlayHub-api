@@ -239,7 +239,7 @@ class User:
 
     # Méthode pour supprimer un ami
     @jwt_required()
-    def remove_friend(self, friend_id):
+    def remove_friend(self, id):
         current_user_email = get_jwt_identity()
         current_user = db.user.find_one({"email": current_user_email})
 
@@ -271,8 +271,9 @@ class User:
             db.chat.delete_one({"_id": chat_id})
 
         return jsonify({"message": "Ami supprimé avec succès."}), 200
+    
 
-    # Déconnexion compte utilisateur avec expiration du token JWT
+    # Déconnexion compte utilisateur avec expiration du token JWT        
     @jwt_required()
     def logout(self):
         unset_jwt_cookies()  # Expiration du token JWT
