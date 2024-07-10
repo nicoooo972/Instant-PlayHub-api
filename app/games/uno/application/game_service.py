@@ -3,6 +3,7 @@ from ..domain.player import Player
 from ..infrastructure.notification import Notification
 from ..domain.state import State
 
+
 class GameService:
     def __init__(self, state: State):
         self.state = state

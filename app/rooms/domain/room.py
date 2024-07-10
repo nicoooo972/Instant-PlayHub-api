@@ -27,7 +27,8 @@ class Room:
     def delete_room(self, room_name, creator_id):
         room = db.rooms.find_one({"room_name": room_name})
         if room and room["creator_id"] == creator_id:
-            return db.rooms.delete_one({"room_name": room_name})
+            result = db.rooms.delete_one({"room_name": room_name})
+            return result
         else:
             return None
 

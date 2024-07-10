@@ -18,7 +18,7 @@ class GameOverReason(Enum):
 
 class Game:
     MIN_PLAYERS_ALLOWED = 2
-    MAX_PLAYERS_ALLOWED = 2
+    MAX_PLAYERS_ALLOWED = 4
 
     def __init__(self, room: str, players: Set[Player], hand_size: int):
         self.hands: DefaultDict[Player, List[Card]] = collections.defaultdict(list)

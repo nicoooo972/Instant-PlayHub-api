@@ -16,4 +16,11 @@ class Database:
 DATABASE_URI = os.getenv("DATABASE_URI")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 
+DATABASE_URI = os.getenv("DATABASE_URI")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+CLIENT = os.getenv("CLIENT")
+
 db = Database(DATABASE_URI, DATABASE_NAME)
+client = MongoClient(DATABASE_URI)
+db = client[CLIENT]
+
