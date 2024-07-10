@@ -239,7 +239,7 @@ class User:
 
     # Méthode pour supprimer un ami
     @jwt_required()
-    def remove_friend(self, id):
+    def remove_friend(self, friend_id):
         current_user_email = get_jwt_identity()
         current_user = db.user.find_one({"email": current_user_email})
 
