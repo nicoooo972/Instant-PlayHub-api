@@ -9,6 +9,7 @@ from flask_jwt_extended import create_access_token, jwt_required, \
     get_jwt_identity, \
     unset_jwt_cookies
 from dotenv import load_dotenv
+from app.infrastructure.message import Message
 load_dotenv()
 
 # Modèle d'un chat

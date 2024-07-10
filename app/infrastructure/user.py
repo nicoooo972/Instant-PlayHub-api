@@ -111,21 +111,25 @@ class User:
         current_user_email = get_jwt_identity()
         update_data = request.json
         user = db.user.find_one({"email": current_user_email})
-        
+
         if not user:
             return jsonify({"error": "Utilisateur non trouvé."}), 404
 
         if "password" in update_data:
             try:
                 secret_key_bytes = secret_key.encode('utf-8')
-                update_data["password"] = pbkdf2_sha256.hash(update_data["password"], salt=secret_key_bytes)
+                update_data["password"] = pbkdf2_sha256.hash(
+                    update_data["password"], salt=secret_key_bytes)
             except Exception as e:
-                return jsonify({"error": "Erreur lors de l'encodage de la clé secrète en bytes.", "details": str(e)}), 500
+                return jsonify({
+                    "error": "Erreur lors de l'encodage de la clé secrète en bytes.",
+                    "details": str(e)}), 500
 
         if "username" in update_data:
             if db.user.find_one({"username": update_data["username"]}):
-                return jsonify({"error": "Ce pseudo est déjà utilisé par un autre utilisateur !"}), 400
-        
+                return jsonify({
+                    "error": "Ce pseudo est déjà utilisé par un autre utilisateur !"}), 400
+
         if "profile_picture" in update_data:
             # Extraire les données base64 du champ profile_picture
             profile_picture_data = update_data["profile_picture"]
@@ -137,7 +141,8 @@ class User:
             try:
                 profile_picture_bytes = base64.b64decode(base64_encoded_data)
             except Exception as e:
-                return jsonify({"error": "Erreur de décodage du base64.", "details": str(e)}), 500
+                return jsonify({"error": "Erreur de décodage du base64.",
+                                "details": str(e)}), 500
 
             # Configuration de la connexion S3
             s3 = boto3.client(
@@ -151,15 +156,21 @@ class User:
 
             # Téléverser l'image sur S3
             try:
-                s3.put_object(Bucket=bucket_name, Key=profile_picture_key, Body=profile_picture_bytes, ACL='public-read')
+                s3.put_object(Bucket=bucket_name, Key=profile_picture_key,
+                              Body=profile_picture_bytes, ACL='public-read')
             except Exception as e:
-                return jsonify({"error": "Erreur lors du téléversement de la photo de profil.", "details": str(e)}), 500
+                return jsonify({
+                    "error": "Erreur lors du téléversement de la photo de profil.",
+                    "details": str(e)}), 500
 
             # Mettre à jour le champ profile_picture avec l'URL de l'image sur S3
-            update_data["profile_picture"] = f"https://{bucket_name}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{profile_picture_key}"
+            update_data[
+                "profile_picture"] = f"https://{bucket_name}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{profile_picture_key}"
 
-        db.user.update_one({"email": current_user_email}, {"$set": update_data})
-        return jsonify({"message": "Informations de l'utilisateur mises à jour avec succès."}), 200
+        db.user.update_one({"email": current_user_email},
+                           {"$set": update_data})
+        return jsonify({
+            "message": "Informations de l'utilisateur mises à jour avec succès."}), 200
 
     # Supprimer le compte de l'utilisateur connecté
     @jwt_required()
@@ -171,14 +182,16 @@ class User:
             return jsonify({"error": "Utilisateur non trouvé."}), 404
 
         db.user.delete_one({"email": current_user_email})
-        return jsonify({"message": "Compte utilisateur supprimé avec succès."}), 200
+        return jsonify(
+            {"message": "Compte utilisateur supprimé avec succès."}), 200
 
     # Récupérer les informations de tous les utilisateurs
     @jwt_required()
     def get_all_users(self):
-        users = list(db.user.find({}, {"password": 0}))  # on exclue le champ 'password'
+        users = list(db.user.find({}, {"_id": 0,
+                                       "password": 0}))  # on exclue le champ 'password'
         return jsonify({"users": users}), 200
-    
+
     # Récupérer les informations d'un utilisateur
     @jwt_required()
     def get_one_user(self, userId):
@@ -201,21 +214,26 @@ class User:
 
         # Ne pas s'ajouter en tant qu'ami
         if current_user["_id"] == friend_id:
-            return jsonify({"error": "Vous ne pouvez pas vous ajouter vous-même en ami."}), 400
+            return jsonify({
+                               "error": "Vous ne pouvez pas vous ajouter vous-même en ami."}), 400
 
         # Vérifier si l'utilisateur qu'on ajoute existe déjà dans la liste
         if friend_id in current_user.get("Friends", []):
-            return jsonify({"error": "Cet utilisateur est déjà votre ami."}), 400
+            return jsonify(
+                {"error": "Cet utilisateur est déjà votre ami."}), 400
 
         # MAJ la liste d'ami (si pas déjà présent)
         current_user["Friends"] = current_user.get("Friends", []) + [friend_id]
-        db.user.update_one({"email": current_user_email}, {"$set": {"Friends": current_user["Friends"]}})
+        db.user.update_one({"email": current_user_email},
+                           {"$set": {"Friends": current_user["Friends"]}})
 
         # MAJ la liste d'ami de l'ami qu'on ajoute
         friend["Friends"] = friend.get("Friends", []) + [current_user["_id"]]
-        db.user.update_one({"_id": friend_id}, {"$set": {"Friends": friend["Friends"]}})
+        db.user.update_one({"_id": friend_id},
+                           {"$set": {"Friends": friend["Friends"]}})
 
-        return jsonify({"message": "L'utilisateur a été ajouté à votre liste d'amis."}), 200
+        return jsonify({
+                           "message": "L'utilisateur a été ajouté à votre liste d'amis."}), 200
 
     # Récupérer la liste d'amis (de l'utilisateur connecté)
     @jwt_required()
@@ -277,7 +295,7 @@ class User:
     def logout(self):
         unset_jwt_cookies()  # Expiration du token JWT
         return jsonify({"message": "Vous êtes déconnecté."}), 200
-    
+
     @jwt_required()
     def get_user_chats(self):
         current_user_email = get_jwt_identity()
@@ -289,9 +307,12 @@ class User:
         for chat_id in current_user.get("Chats", []):
             chat = db.chat.find_one({"_id": chat_id})
             if chat:
-                other_user_id = [user_id for user_id in chat["Users"] if user_id != current_user["_id"]]
+                other_user_id = [user_id for user_id in chat["Users"] if
+                                 user_id != current_user["_id"]]
                 if other_user_id:
-                    other_user = db.user.find_one({"_id": other_user_id[0]}, {"username": 1, "profile_picture": 1})
+                    other_user = db.user.find_one({"_id": other_user_id[0]},
+                                                  {"username": 1,
+                                                   "profile_picture": 1})
                     if other_user:
                         user_chats.append({
                             "chat_id": chat["_id"],
@@ -300,5 +321,6 @@ class User:
                         })
 
         return jsonify({"chats": user_chats}), 200
-    
+
+
 user = User()
