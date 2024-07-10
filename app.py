@@ -140,10 +140,14 @@ def rooms():
 
 # ---------- Chat ----------
 
+@app.route('/chat')
+def chat():
+    return render_template('index.html')
+
 @app.route('/chat/check_or_create/<friend_id>', methods=['POST'])
 @jwt_required()
 def check_or_create_chat(friend_id):
-    chat_service = Chat()
+    chat_service = Chat() # SI LA ROUTE BUGGG VEUILLEZ REMPLACER PAR LA CLASSE User()
     return chat_service.check_or_create_chat(friend_id)
 
 # Créer un chat
@@ -201,7 +205,7 @@ def get_chat_messages(chat_id):
 @jwt_required()
 def send_message():
     message_data = request.json
-    chat_id = message_data.get('Chat')
+    chat_id = message_data.get('chat_id')
     content = message_data.get('content')
 
     if not chat_id or not content:
@@ -281,6 +285,7 @@ def on_leave(data):
 def handle_message(data):
     chat_id = data['chat_id']
     content = data['content']
+    print("DATAAAAAAAAAAAAAAAA : ",data)
 
     if not chat_id or not content:
         emit('error', {"error": "chat_id et content sont requis."})

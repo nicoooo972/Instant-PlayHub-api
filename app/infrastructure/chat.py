@@ -1,6 +1,7 @@
 # app/infrastructure/chat.py
 
 from flask import jsonify
+from app.infrastructure.message import Message
 from db import db
 from datetime import datetime
 import uuid
@@ -117,11 +118,8 @@ class Chat:
     
     # Récupérer les messages d'un chat spécifique
     def get_chat_messages(self, chat_id):
-        chat = db.chat.find_one({"_id": chat_id})
-        if chat:
-            return chat["messages"]
-        else:
-            return []
+            messages = Message.get_messages_by_chat_id(chat_id)
+            return messages
     
     # Récupérer les chats (de l'utilisateur connecté)
     @jwt_required()

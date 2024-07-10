@@ -272,7 +272,6 @@ class User:
 
         return jsonify({"message": "Ami supprimé avec succès."}), 200
     
-
     # Déconnexion compte utilisateur avec expiration du token JWT        
     @jwt_required()
     def logout(self):

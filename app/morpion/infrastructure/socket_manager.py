@@ -15,7 +15,7 @@ user_sessions = {}  # New dictionary to track user sessions
 def setup_morpion_sockets(socketio):
     @socketio.on('connect')
     def on_connect():
-        print(f"User connected to Morpion with SID: {request.sid}")
+        print(f"User connected to Morpion with SID: {request.sid} gros pd")
         socketio.emit('connected',
                       {'message': 'Connected to Morpion game server.'})
 
@@ -136,8 +136,9 @@ def setup_morpion_sockets(socketio):
             else:
                 socketio.emit('error', {'message': message}, room=request.sid)
 
-    @socketio.on('send_message')
+    @socketio.on('send_message_morpion')
     def on_send_message(data):
+        print("DATA DE MORPION : ", data)
         room = data['room']
         message = data['message']
         if room in chat_history:

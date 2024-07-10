@@ -84,5 +84,10 @@ class Message:
         messages = list(
             db.message.find())  # Récupérer l'historique des messages depuis la base de données MongoDB
         return messages
+    
+    def get_messages_by_chat_id(chat_id):
+        messages_ids = db.chat.find_one({"_id": chat_id}).get("Messages", [])
+        messages = list(db.message.find({"_id": {"$in": messages_ids}}).sort("created_at", 1))  # Sort by timestamp descending
+        return messages
 
 message = Message()
