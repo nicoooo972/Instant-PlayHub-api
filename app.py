@@ -71,6 +71,7 @@ def get_rooms():
     rooms = room_model.get_rooms_by_game(game_type)
     return jsonify({"rooms": rooms, "game_type": game_type}), 200
 
+
 @app.route('/join_room/<room>')
 def join_room(room):
     room_data = room_model.get_rooms_by_game({"room_name": room})
@@ -87,9 +88,7 @@ def delete_room():
     room_name = request.json.get('room_name')
     creator_id = request.json.get('creator_id')
     result = room_model.delete_room(room_name, creator_id)
-    print(result.deleted_count)
     if result and result.deleted_count == 1:
-        print("here")
         return jsonify({"message": "Room deleted successfully"}), 200
     else:
         return jsonify({"message": "You are not authorized to delete this room"}), 403
