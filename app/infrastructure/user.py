@@ -40,7 +40,7 @@ class User:
             "username": user_data.get('username'),
             "email": user_data.get('email'),
             "password": user_data.get('password'),
-            "friends": user_data.get('friends'),
+            "Friends": [],
             "is_super_user": False,
             "profile_picture": '',
             "created_at": created_at
@@ -188,8 +188,7 @@ class User:
     # Récupérer les informations de tous les utilisateurs
     @jwt_required()
     def get_all_users(self):
-        users = list(db.user.find({}, {"_id": 0,
-                                       "password": 0}))  # on exclue le champ 'password'
+        users = list(db.user.find({}, {"password": 0}))  # on exclue le champ 'password'
         return jsonify({"users": users}), 200
 
     # Récupérer les informations d'un utilisateur
