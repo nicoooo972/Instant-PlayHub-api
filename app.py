@@ -8,13 +8,12 @@ from gevent import pywsgi
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
 from app.infrastructure.message import Message
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, verify_jwt_in_request, get_jwt_identity, jwt_required
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from app.middlewares.authMiddleware import AuthMiddleware
 from dotenv import load_dotenv
 from app.morpion.infrastructure.socket_manager import setup_morpion_sockets
 from geventwebsocket.handler import WebSocketHandler
-from flask_jwt_extended import jwt_required
 
 app = Flask(__name__, template_folder='templates')
 app.debug = True
@@ -117,8 +116,8 @@ def remove_friend():
     if not friend_id:
         return jsonify({"error": "friend_id est requis."}), 400
 
-    chat_service = Chat()
-    return chat_service.remove_friend(friend_id)
+    user_service = User() # si la méthode ne marche pas essayer avec la class Chat()
+    return user_service.remove_friend(friend_id)
 
 # Déconnexion compte utilisateur
 @app.route('/logout', methods=['POST'])
@@ -262,7 +261,21 @@ def delete_chat(chat_id):
 
 @socketio.on('connect')
 def connect():
-    print(f'Le client {request.sid} est connecté')
+    token = request.args.get('token')
+    if token:
+        try:
+            # Simuler une requête HTTP pour vérifier le JWT
+            request.headers = {'Authorization': f'Bearer {token}'}
+            verify_jwt_in_request()
+            user_email = get_jwt_identity()
+            print(f'Le client {request.sid} est connecté en tant que {user_email}')
+        except Exception as e:
+            print(f'Erreur de connexion: {e}')
+            return False  # Refuser la connexion si le token n'est pas valide
+    else:
+        print('Token JWT manquant')
+        return False  # Refuser la connexion si le token est manquant
+
 
 @socketio.on('disconnect')
 def disconnect():
@@ -283,24 +296,40 @@ def on_leave(data):
 
 @socketio.on('message')
 def handle_message(data):
-    chat_id = data['chat_id']
-    content = data['content']
-    print("DATAAAAAAAAAAAAAAAA : ",data)
+    token = data.get('token')
+    if token:
+        try:
+            # Simuler une requête HTTP pour vérifier le JWT
+            request.headers = {'Authorization': f'Bearer {token}'}
+            verify_jwt_in_request()
+            user_email = get_jwt_identity()
 
-    if not chat_id or not content:
-        emit('error', {"error": "chat_id et content sont requis."})
-        return
+            chat_id = data['chat_id']
+            content = data['content']
+            sender = data['Sender']
+            created_at = data['created_at']
 
-    message_service = Message()
-    response, status = message_service.send_message(chat_id, content)
+            if not chat_id or not content:
+                emit('error', {"error": "chat_id et content sont requis."})
+                return
 
-    if status == 200:
-        socketio.emit('message', {
-            "chat_id": chat_id,
-            "content": content
-        }, room=chat_id)
+            message_service = Message()
+            response, status = message_service.send_message(chat_id, content)
+
+            if status == 200:
+                socketio.emit('message', {
+                        "chat_id": chat_id,
+                        "content": content,
+                        "Sender": sender,
+                        "created_at": created_at
+                    }, room=chat_id)
+            else:
+                emit('error', response.get_json())
+        except Exception as e:
+            print(f'Erreur de message: {e}')
+            emit('error', {"error": "Token JWT invalide ou expiré."})
     else:
-        emit('error', response.get_json())
+        emit('error', {"error": "Token JWT manquant."})
   
 if __name__ == '__main__':
     app.logger.setLevel(logging.ERROR)
