@@ -2,6 +2,7 @@ from flask import request
 from flask_socketio import SocketIO, join_room, leave_room
 from bson.objectid import ObjectId
 
+from app.infrastructure.user import User
 from ..application.game_service import GameService
 from ..domain.state import State
 from ..domain.player import Player
@@ -16,8 +17,8 @@ state = State()
 game_service = GameService(state)
 
 
-def get_user_id_from_sid(sid):
-    user = db.user.find_one({"sid": sid})
+def get_user_id_from_sid(_id):
+    user = db.user.find_one({"_id": _id})
     print(user)
     return str(user["_id"]) if user else None
 
@@ -32,7 +33,8 @@ def setup_uno_sockets(socketio: SocketIO):
     @socketio.on('disconnect')
     def on_disconnect():
         print("User disconnected from Uno")
-        user_id = get_user_id_from_sid(request.sid)
+        user = User()
+        user_id = user.get_user_info
         for room, players in rooms.items():
             for player in players:
                 if player['id'] == user_id:
