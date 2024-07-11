@@ -61,7 +61,7 @@ def get_rooms():
 
 
 @app.route('/join_room/<room>')
-def join_room(room):
+def player_join_room(room):
     room_data = room_model.get_rooms_by_game({"room_name": room})
     if room_data:
         game_type = room_data[0]['game_type']
