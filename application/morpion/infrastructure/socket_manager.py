@@ -104,7 +104,43 @@ def setup_morpion_sockets(socketio):
 
         print(f"User {user_id} joined room {room_id}")
 
+    @socketio.on('start_game')
+    def on_start_game(data):
+        room = data['room']
+        if room in rooms and any(
+                player['sid'] == request.sid for player in rooms[room]):
+            game_service.start_new_game()
+            socketio.emit('game_started',
+                          {'message': 'A new Morpion game has started.'},
+                          room=room)
+            update_game_state(room)
 
+    @socketio.on('make_move')
+    def on_make_move(data):
+        row = data['row']
+        col = data['col']
+        player = data['player']
+        room = data['room']
+        if room in rooms and any(p['sid'] == request.sid for p in rooms[room]):
+            success, message = game_service.make_move(player, row, col)
+            if success:
+                update_game_state(room)
+            else:
+                socketio.emit('error', {'message': message}, room=request.sid)
+
+    @socketio.on('send_message')
+    def on_send_message(data):
+        room = data['room']
+        message = data['message']
+        if room in chat_history:
+            chat_history[room].append(message)
+            socketio.emit('new_message', message, room=room)
+
+    def update_player_count(room):
+        playerCount = len(rooms[room])
+        print(f"Room {room} player count: {playerCount}")
+        socketio.emit('update_player_count',
+                      {'room': room, 'playerCount': playerCount}, room=room)
 
     def update_game_state(room):
         game_state = game_service.get_game_state()
