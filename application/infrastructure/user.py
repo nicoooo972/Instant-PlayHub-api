@@ -174,7 +174,6 @@ class User:
         return jsonify({
             "message": "Informations de l'utilisateur mises à jour avec succès."}), 200
 
-    @jwt_required()
     def get_user_id(self):
         current_user_email = get_jwt_identity()
         user = db.user.find_one({"email": current_user_email}, {"_id": 1})
