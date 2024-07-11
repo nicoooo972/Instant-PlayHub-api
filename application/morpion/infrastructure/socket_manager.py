@@ -17,16 +17,19 @@ scores = {}
 chat_history = {}
 user_sessions = {}  # New dictionary to track user sessions
 
+
 def setup_morpion_sockets(socketio):
     @socketio.on('connect_morpion')
     def on_connect():
         print(f"User connected to Morpion with SID: {request.sid}")
-        socketio.emit('connected_morpion', {'message': 'Connected to Morpion game server.'})
+        socketio.emit('connected_morpion',
+                      {'message': 'Connected to Morpion game server.'})
 
     @socketio.on('disconnect_morpion')
     def on_disconnect():
         print(f"User disconnected from Morpion with SID: {request.sid}")
-        user_id = next((u_id for u_id, s_id in user_sessions.items() if s_id == request.sid), None)
+        user_id = next((u_id for u_id, s_id in user_sessions.items() if
+                        s_id == request.sid), None)
         if user_id:
             del user_sessions[user_id]
         for room, players in rooms.items():
@@ -49,7 +52,9 @@ def setup_morpion_sockets(socketio):
         room_id = data['room_id']
 
         if user_id is None:
-            socketio.emit('error_morpion', {'message': 'User ID is required to join a room'}, room=request.sid)
+            socketio.emit('error_morpion',
+                          {'message': 'User ID is required to join a room'},
+                          room=request.sid)
             return
 
         print(f"User {user_id} attempting to join room: {room_name}")
@@ -58,41 +63,57 @@ def setup_morpion_sockets(socketio):
         print("room INFO: ", room)
         if room is None:
             print("error room does not exist")
-            socketio.emit('error_morpion', {'message': 'Room does not exist'}, room=request.sid)
+            socketio.emit('error_morpion', {'message': 'Room does not exist'},
+                          room=request.sid)
             return
 
         if len(room['players']) < 2 and user_id not in room['players']:
             Room.add_player_to_room(room_id, user_id)
-            room = Room.get_room_by_id(room_id)  # Refresh room data from the database
+            room = Room.get_room_by_id(
+                room_id)  # Refresh room data from the database
             print("room", room)
             rooms[room_id] = room['players']
             print("rooms info :", rooms)
             user_sessions[user_id] = request.sid
             join_room(room_id)
-            players = [User().get_one_user(player_id) for player_id in room['players']]
-            player_data = [{'username': player['username'], 'avatarUrl': player['profile_picture']} for player in players]
-            socketio.emit('room_joined_morpion', {'room': room_id, 'players': player_data}, room=room_id)
+            players = [User().get_one_user(player_id) for player_id in
+                       room['players']]
+            player_data = [{'username': player['username'],
+                            'avatarUrl': player['profile_picture']} for player
+                           in players]
+            socketio.emit('room_joined_morpion',
+                          {'room': room_id, 'players': player_data},
+                          room=room_id)
         elif len(room['players']) < 2 and user_id in room['players']:
             print("User rejoining room")
             user_sessions[user_id] = request.sid
             join_room(room_id)
-            players = [User().get_one_user(player_id) for player_id in room['players']]
-            player_data = [{'username': player['username'], 'avatarUrl': player['profile_picture']} for player in players]
-            socketio.emit('room_joined_morpion', {'room': room_id, 'players': player_data}, room=room_id)
+            players = [User().get_one_user(player_id) for player_id in
+                       room['players']]
+            player_data = [{'username': player['username'],
+                            'avatarUrl': player['profile_picture']} for player
+                           in players]
+            socketio.emit('room_joined_morpion',
+                          {'room': room_id, 'players': player_data},
+                          room=room_id)
         else:
             print("error room full")
-            socketio.emit('error_morpion', {'message': 'Room is full or user already in room'}, room=request.sid)
+            socketio.emit('error_morpion',
+                          {'message': 'Room is full or user already in room'},
+                          room=request.sid)
 
         print(f"User {user_id} joined room {room_id}")
 
-    # Other event handlers...
+
 
     def update_game_state(room):
         game_state = game_service.get_game_state()
         socketio.emit('update_state_morpion', game_state, room=room)
         if game_state['winner']:
             scores[room][game_state['winner']] += 1
-            socketio.emit('game_over', {'message': f"{game_state['winner']} wins!"}, room=room)
+            socketio.emit('game_over',
+                          {'message': f"{game_state['winner']} wins!"},
+                          room=room)
             update_scores(room)
         elif game_state['is_full']:
             socketio.emit('game_over_morpion', {'message': "Draw!"}, room=room)
@@ -102,4 +123,5 @@ def setup_morpion_sockets(socketio):
 
     def send_chat_history(room):
         if room in chat_history:
-            socketio.emit('chat_history_morpion', chat_history[room], room=request.sid)
+            socketio.emit('chat_history_morpion', chat_history[room],
+                          room=request.sid)

@@ -202,9 +202,12 @@ class User:
         return jsonify({"users": users}), 200
 
     # Récupérer les informations d'un utilisateur
-    def get_one_user(self, userId):
-        user = db.user.find_one({"_id": userId}, {"password": 0})
-        return jsonify({"user": user}), 200
+    def get_one_user(self, user_id):
+        user = db.user.find_one({"_id": user_id}, {"password": 0})
+        if user:
+            user["_id"] = str(user["_id"])  # Convert ObjectId to string
+            return user
+        return None
 
     # Ajouter un utilisateur comme ami
     @jwt_required()
