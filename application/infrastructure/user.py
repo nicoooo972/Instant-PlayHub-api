@@ -1,4 +1,4 @@
-# app/infrastructure/user.py
+# application/infrastructure/user.py
 
 import base64
 import logging
@@ -18,17 +18,19 @@ load_dotenv()
 
 secret_key = os.getenv("SECRET_KEY")
 
+
 # Modèle d'utilisateur
 class User:
-    
+
     # Création compte utilisateur
     def register(self):
         user_data = request.json
-        
+
         # Vérification de la longueur du pseudo lors de l'inscription
         username = user_data.get("username", "")
         if len(username) > 20:
-            return jsonify({"error": "Le pseudo ne peut pas dépasser 20 caractères."}), 400
+            return jsonify({
+                               "error": "Le pseudo ne peut pas dépasser 20 caractères."}), 400
 
         # Date de création de l'utilisateur
         now = datetime.now()
@@ -172,6 +174,14 @@ class User:
         return jsonify({
             "message": "Informations de l'utilisateur mises à jour avec succès."}), 200
 
+    @jwt_required()
+    def get_user_id(self):
+        current_user_email = get_jwt_identity()
+        user = db.user.find_one({"email": current_user_email}, {"_id": 1})
+        if user:
+            return jsonify({"user_id": str(user["_id"])}), 200
+        return jsonify({"error": "Utilisateur non trouvé."}), 404
+
     # Supprimer le compte de l'utilisateur connecté
     @jwt_required()
     def delete_account(self):
@@ -188,7 +198,8 @@ class User:
     # Récupérer les informations de tous les utilisateurs
     @jwt_required()
     def get_all_users(self):
-        users = list(db.user.find({}, {"password": 0}))  # on exclue le champ 'password'
+        users = list(
+            db.user.find({}, {"password": 0}))  # on exclue le champ 'password'
         return jsonify({"users": users}), 200
 
     # Récupérer les informations d'un utilisateur
@@ -214,7 +225,7 @@ class User:
         # Ne pas s'ajouter en tant qu'ami
         if current_user["_id"] == friend_id:
             return jsonify({
-                               "error": "Vous ne pouvez pas vous ajouter vous-même en ami."}), 400
+                "error": "Vous ne pouvez pas vous ajouter vous-même en ami."}), 400
 
         # Vérifier si l'utilisateur qu'on ajoute existe déjà dans la liste
         if friend_id in current_user.get("Friends", []):
@@ -232,7 +243,7 @@ class User:
                            {"$set": {"Friends": friend["Friends"]}})
 
         return jsonify({
-                           "message": "L'utilisateur a été ajouté à votre liste d'amis."}), 200
+            "message": "L'utilisateur a été ajouté à votre liste d'amis."}), 200
 
     # Récupérer la liste d'amis (de l'utilisateur connecté)
     @jwt_required()
@@ -264,10 +275,12 @@ class User:
             return jsonify({"error": "Utilisateur non trouvé."}), 404
 
         # Supprimer l'ami de la liste des amis de l'utilisateur connecté
-        db.user.update_one({"_id": current_user["_id"]}, {"$pull": {"Friends": friend_id}})
-        
+        db.user.update_one({"_id": current_user["_id"]},
+                           {"$pull": {"Friends": friend_id}})
+
         # Supprimer l'utilisateur connecté de la liste des amis de l'autre utilisateur
-        db.user.update_one({"_id": friend_id}, {"$pull": {"Friends": current_user["_id"]}})
+        db.user.update_one({"_id": friend_id},
+                           {"$pull": {"Friends": current_user["_id"]}})
 
         # Trouver le chat entre les deux utilisateurs
         chat = db.chat.find_one({
@@ -278,8 +291,10 @@ class User:
         if chat:
             chat_id = chat["_id"]
             # Supprimer le chat de la liste des chats de chaque utilisateur
-            db.user.update_one({"_id": current_user["_id"]}, {"$pull": {"Chats": chat_id}})
-            db.user.update_one({"_id": friend_id}, {"$pull": {"Chats": chat_id}})
+            db.user.update_one({"_id": current_user["_id"]},
+                               {"$pull": {"Chats": chat_id}})
+            db.user.update_one({"_id": friend_id},
+                               {"$pull": {"Chats": chat_id}})
 
             # Supprimer les messages associés à ce chat
             db.message.delete_many({"Chat": chat_id})
@@ -288,7 +303,7 @@ class User:
             db.chat.delete_one({"_id": chat_id})
 
         return jsonify({"message": "Ami supprimé avec succès."}), 200
-    
+
     # Déconnexion compte utilisateur avec expiration du token JWT        
     @jwt_required()
     def logout(self):

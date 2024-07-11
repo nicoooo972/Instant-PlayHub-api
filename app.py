@@ -7,12 +7,12 @@ from flask_jwt_extended import JWTManager, verify_jwt_in_request, get_jwt_identi
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from dotenv import load_dotenv
 
-from app.infrastructure.user import User
-from app.infrastructure.chat import Chat
-from app.infrastructure.message import Message
-from app.middlewares.authMiddleware import AuthMiddleware
-from app.morpion.infrastructure.socket_manager import setup_morpion_sockets
-from app.rooms.domain.room import room_model
+from application.infrastructure.user import User
+from application.infrastructure.chat import Chat
+from application.infrastructure.message import Message
+from application.middlewares.authMiddleware import AuthMiddleware
+from application.morpion.infrastructure.socket_manager import setup_morpion_sockets
+from application.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
 app.debug = True
@@ -46,8 +46,7 @@ def create_generic_room():
     game_type = request.json.get('game_type')
     creator_id = request.json.get('creator_id')
     room_model.create_room(room_name, game_type, creator_id)
-    socketio.emit('room_created', {'room': room_name,
-                                   'creator_id': creator_id,
+    socketio.emit('room_created', {'room': room_name, 'creator_id': creator_id,
                                    'game_type': game_type})
     return redirect(url_for('get_rooms', game_type=game_type))
 

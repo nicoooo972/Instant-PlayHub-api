@@ -1,7 +1,7 @@
 import unittest
 
-from app.morpion.application.game_service import GameService
-from app.morpion.domain import board
+from application.morpion.application.game_service import GameService
+from application.morpion.domain import board
 
 
 class TestGameService(unittest.TestCase):

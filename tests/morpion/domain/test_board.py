@@ -1,6 +1,6 @@
 import unittest
 
-from app.morpion.domain import board
+from application.morpion.domain import board
 
 
 class TestBoardDebug(unittest.TestCase):

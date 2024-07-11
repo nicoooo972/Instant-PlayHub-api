@@ -1,4 +1,4 @@
-# app/infrastructure/message.py
+# application/infrastructure/message.py
 
 from flask import jsonify
 from db import db
