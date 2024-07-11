@@ -2,7 +2,6 @@ import os
 import logging
 from flask import Flask, jsonify, request, render_template, redirect, url_for
 from flask_cors import CORS
-from gevent import pywsgi
 from flask_jwt_extended import JWTManager, verify_jwt_in_request, get_jwt_identity, jwt_required
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from dotenv import load_dotenv
@@ -45,9 +44,11 @@ def create_generic_room():
     room_name = request.json.get('room_name')
     game_type = request.json.get('game_type')
     creator_id = request.json.get('creator_id')
-    room_model.create_room(room_name, game_type, creator_id)
+    result = room_model.create_room(room_name, game_type, creator_id)
+    room_id = result.inserted_id
+    print("room id : ", room_id)
     socketio.emit('room_created', {'room': room_name, 'creator_id': creator_id,
-                                   'game_type': game_type})
+                                   'game_type': game_type, 'room_id': room_id})
     return redirect(url_for('get_rooms', game_type=game_type))
 
 

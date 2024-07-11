@@ -202,7 +202,6 @@ class User:
         return jsonify({"users": users}), 200
 
     # Récupérer les informations d'un utilisateur
-    @jwt_required()
     def get_one_user(self, userId):
         user = db.user.find_one({"_id": userId}, {"password": 0})
         return jsonify({"user": user}), 200
