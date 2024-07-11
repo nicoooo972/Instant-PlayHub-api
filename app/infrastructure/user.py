@@ -195,7 +195,7 @@ class User:
     @jwt_required()
     def get_one_user(self, userId):
         user = db.user.find_one({"_id": userId}, {"password": 0})
-        return jsonify({"User data : ": user}), 200
+        return jsonify({"user": user}), 200
 
     # Ajouter un utilisateur comme ami
     @jwt_required()

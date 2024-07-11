@@ -1,19 +1,18 @@
-# app.py
-
 import os
 import logging
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, redirect, url_for
 from flask_cors import CORS
 from gevent import pywsgi
+from flask_jwt_extended import JWTManager, verify_jwt_in_request, get_jwt_identity, jwt_required
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from dotenv import load_dotenv
+
 from app.infrastructure.user import User
 from app.infrastructure.chat import Chat
 from app.infrastructure.message import Message
-from flask_jwt_extended import JWTManager, verify_jwt_in_request, get_jwt_identity, jwt_required
-from flask_socketio import SocketIO, emit, join_room, leave_room
 from app.middlewares.authMiddleware import AuthMiddleware
-from dotenv import load_dotenv
 from app.morpion.infrastructure.socket_manager import setup_morpion_sockets
-from geventwebsocket.handler import WebSocketHandler
+from app.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
 app.debug = True
@@ -38,6 +37,49 @@ setup_morpion_sockets(socketio)
 @app.route('/')
 def home():
     return "Page d'accueil de l'application Flask !"
+
+
+@app.route('/create_room', methods=['POST'])
+@jwt_required()
+def create_generic_room():
+    room_name = request.json.get('room_name')
+    game_type = request.json.get('game_type')
+    creator_id = request.json.get('creator_id')
+    room_model.create_room(room_name, game_type, creator_id)
+    socketio.emit('room_created', {'room': room_name,
+                                   'creator_id': creator_id,
+                                   'game_type': game_type})
+    return redirect(url_for('get_rooms', game_type=game_type))
+
+
+@app.route('/rooms', methods=['GET'])
+@jwt_required()
+def get_rooms():
+    game_type = request.args.get('game_type')
+    rooms = room_model.get_rooms_by_game(game_type)
+    return jsonify({"rooms": rooms, "game_type": game_type}), 200
+
+
+@app.route('/join_room/<room>')
+def join_room(room):
+    room_data = room_model.get_rooms_by_game({"room_name": room})
+    if room_data:
+        game_type = room_data[0]['game_type']
+        return redirect(url_for(game_type, room=room))
+    return redirect(url_for('get_rooms', game_type='uno'))
+
+
+@app.route('/delete_room', methods=['POST'])
+@jwt_required()
+def delete_room():
+    room_name = request.json.get('room_name')
+    creator_id = request.json.get('creator_id')
+    result = room_model.delete_room(room_name, creator_id)
+    if result and result.deleted_count == 1:
+        return jsonify({"message": "Room deleted successfully"}), 200
+    else:
+        return jsonify({"message": "You are not authorized to delete this room"}), 403
+
 
 # Création de compte utilisateur
 @app.route('/register', methods=['POST'])
@@ -116,7 +158,7 @@ def remove_friend():
     if not friend_id:
         return jsonify({"error": "friend_id est requis."}), 400
 
-    user_service = User() # si la méthode ne marche pas essayer avec la class Chat()
+    user_service = User()  # si la méthode ne marche pas essayer avec la class Chat()
     return user_service.remove_friend(friend_id)
 
 # Déconnexion compte utilisateur
@@ -258,6 +300,7 @@ def delete_chat(chat_id):
 @socketio.on('connect')
 def connect():
     token = request.args.get('token')
+    print(token)
     if token:
         try:
             # Simuler une requête HTTP pour vérifier le JWT
@@ -292,6 +335,7 @@ def on_leave(data):
 
 @socketio.on('message')
 def handle_message(data):
+    print("test")
     token = data.get('token')
     if token:
         try:
@@ -321,15 +365,19 @@ def handle_message(data):
                     }, room=chat_id)
             else:
                 emit('error', response.get_json())
+        except KeyError as e:
+            print(f'KeyError: {e}')
+            emit('error', {"error": "Session is disconnected."})
         except Exception as e:
             print(f'Erreur de message: {e}')
             emit('error', {"error": "Token JWT invalide ou expiré."})
     else:
         emit('error', {"error": "Token JWT manquant."})
-  
+
+
 if __name__ == '__main__':
     app.logger.setLevel(logging.ERROR)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.ERROR)
     app.logger.addHandler(stream_handler)
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, log_output=True)
