@@ -2,7 +2,7 @@ from flask import request
 from flask_socketio import SocketIO, join_room, leave_room
 from bson.objectid import ObjectId
 
-from app.infrastructure.user import User
+from application.infrastructure.user import User
 from ..application.game_service import GameService
 from ..domain.state import State
 from ..domain.player import Player

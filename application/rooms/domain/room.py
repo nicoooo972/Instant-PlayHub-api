@@ -1,5 +1,4 @@
 import uuid
-
 from db import db
 
 
@@ -20,9 +19,10 @@ class Room:
     def get_rooms_by_game(self, game_type):
         return list(db.rooms.find({"game_type": game_type}))
 
-    def add_player_to_room(self, room_name, player_id):
-        return db.rooms.update_one({"room_name": room_name},
-                                   {"$push": {"players": player_id}})
+    @classmethod
+    def add_player_to_room(cls, room_id, player_id):
+        return db.rooms.update_one({"_id": room_id},
+                                   {"$addToSet": {"players": player_id}})
 
     def delete_room(self, room_name, creator_id):
         room = db.rooms.find_one({"room_name": room_name})
@@ -31,6 +31,10 @@ class Room:
             return result
         else:
             return None
+
+    @classmethod
+    def get_room_by_id(cls, room_id):
+        return db.rooms.find_one({"_id": room_id})
 
 
 room_model = Room()

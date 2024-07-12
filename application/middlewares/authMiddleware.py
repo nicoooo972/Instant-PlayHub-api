@@ -1,4 +1,4 @@
-# app/middlewares/authMiddleware.py
+# application/middlewares/authMiddleware.py
 
 from functools import wraps
 from flask import request, jsonify

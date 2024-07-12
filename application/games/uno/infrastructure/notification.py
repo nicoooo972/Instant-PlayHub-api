@@ -1,4 +1,4 @@
-from app.core.notification.infrastructure.notification_interface import \
+from application.core.notification.infrastructure.notification_interface import \
     NotificationInterface
 
 
