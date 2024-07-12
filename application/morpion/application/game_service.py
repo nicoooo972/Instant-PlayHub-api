@@ -10,22 +10,22 @@ class GameService:
     def make_move(self, player, row, col):
         # Check if it's the correct player's turn
         if self.board.get_current_player() != player:
-            return False, "It's not your turn!"
+            return False, "Ce n'est pas ton tour!"
 
         # Attempt to make the move on the board
         if not self.board.make_move(row, col):
-            return False, "Invalid move!"
+            return False, "Mouvement invalide!"
 
         # Check for a winner or if the game is a draw
         winner = self.board.check_winner()
         if winner:
-            return True, f"{winner} wins!"
+            return True, f"{winner} à gagné!"
         if self.board.is_full():
-            return True, "Draw!"
+            return True, "Egalité!"
 
         # Switch players if no winner or draw
         self.board.switch_player()
-        return True, "Move accepted!"
+        return True, "Mouvement accepté!"
 
     def get_game_state(self):
         return {

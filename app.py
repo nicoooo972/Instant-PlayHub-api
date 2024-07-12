@@ -11,6 +11,7 @@ from application.infrastructure.chat import Chat
 from application.infrastructure.message import Message
 from application.middlewares.authMiddleware import AuthMiddleware
 from application.morpion.infrastructure.socket_manager import setup_morpion_sockets
+from application.games.connect_four.infrastructure.socket_manager import setup_connect_four_sockets
 from application.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
@@ -30,7 +31,7 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
-
+setup_connect_four_sockets(socketio)
 # ---------- Utilisateur ----------
 
 @app.route('/')
