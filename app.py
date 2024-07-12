@@ -12,6 +12,7 @@ from application.infrastructure.message import Message
 from application.middlewares.authMiddleware import AuthMiddleware
 from application.morpion.infrastructure.socket_manager import setup_morpion_sockets
 from application.scores.infrastructure.score import Score
+from application.games.connect_four.infrastructure.socket_manager import setup_connect_four_sockets
 from application.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
@@ -48,7 +49,7 @@ def get_scores_by_user(user_id):
     scores = score_model.get_scores_by_user(user_id)
     return jsonify(scores), 200
 
-
+setup_connect_four_sockets(socketio)
 # ---------- Utilisateur ----------
 
 @app.route('/')
