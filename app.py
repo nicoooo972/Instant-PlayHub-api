@@ -11,6 +11,7 @@ from application.infrastructure.chat import Chat
 from application.infrastructure.message import Message
 from application.middlewares.authMiddleware import AuthMiddleware
 from application.morpion.infrastructure.socket_manager import setup_morpion_sockets
+from application.scores.infrastructure.score import Score
 from application.rooms.domain.room import room_model
 
 app = Flask(__name__, template_folder='templates')
@@ -30,6 +31,23 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 # ---------- Setup ----------
 setup_morpion_sockets(socketio)
+
+score_model = Score()
+
+# ---------- Scores ----------
+
+@app.route('/scores/game/<game_type>', methods=['GET'])
+@jwt_required()
+def get_scores_by_game(game_type):
+    scores = score_model.get_scores_by_game(game_type)
+    return jsonify(scores), 200
+
+@app.route('/scores/user/<user_id>', methods=['GET'])
+@jwt_required()
+def get_scores_by_user(user_id):
+    scores = score_model.get_scores_by_user(user_id)
+    return jsonify(scores), 200
+
 
 # ---------- Utilisateur ----------
 
