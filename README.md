@@ -4,7 +4,8 @@
 
 ## Description
 
-Dépôt Back-End du projet [Instant PlayHub](https://google.com).
+Dépôt Back-End du projet [Instant PlayHub](https://github.com/nicoooo972/Instant-PlayHub-api).
+Dépôt Front-End du projet de [Instant PlayHub](https://github.com/FloFlo-L/instant-playhub-front)
 
 **Instant PlayHub** est une plateforme de jeu en ligne en temps réel permettant aux joueurs de s'affronter dans des jeux tels que des quiz, des jeux de stratégie ou des jeux d'adresse.
 
@@ -95,13 +96,3 @@ OU
 
 python3 app.py
 ```
-
-## Liens
-
-[Dépôt Front-End](https://google.com)
-
-[Dépôt Back-End](https://google.com)
-
-[Instant PlayHub](https://google.com)
-
-[Dépôt Front-End](https://google.com)
